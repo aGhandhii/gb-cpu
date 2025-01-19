@@ -4,3 +4,4 @@ sv2v/*
 build/*
 sim/*
 *icebreaker*
+Makefile
