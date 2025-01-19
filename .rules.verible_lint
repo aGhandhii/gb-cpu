@@ -1,9 +1,0 @@
--explicit-parameter-storage-type
--explicit-function-task-parameter-type
-+line-length=length:120
-+endif-comment
--generate-label-prefix
--typedef-enums
--unpacked-dimensions-range-ordering
--invalid-system-task-function
--package-filename
