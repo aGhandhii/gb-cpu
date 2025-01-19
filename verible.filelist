@@ -1,0 +1,4 @@
+./src/decoder.sv
+./src/mux.sv
+./test/decoder_tb.sv
+./test/mux_tb.sv

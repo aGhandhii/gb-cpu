@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Author: Alex Ghandhi
+# Automates tag generation after commit
+
+# Make sure ctags is available
+if [[ ! -n $(type -P ctags) ]] then
+    echo "Could Not Locate CTags on System!"
+    exit 0
+fi
+
+# Go to the root of the repository and regenerate the tags
+ROOT=$(git rev-parse --show-toplevel 2> /dev/null)
+cd $ROOT
+echo -n "Updating Tags ... "
+ctags -R --languages=SystemVerilog --exclude=sv2v .
+echo -e -n "Done!\n"
+exit 0
