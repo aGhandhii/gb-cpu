@@ -57,7 +57,7 @@ test: sv2v
 	# Simulate the design with Icarus
 ifdef ICARUS
 ifdef WINDOWS
-	iverilog -o $(TEST_BIN) -s $(TOP) $(shell fd -e v . '.\sv2v')
+	iverilog -o $(TEST_BIN) -s $(TOP) $(shell fd -I . '.\sv2v')
 else
 	iverilog -o $(TEST_BIN) -s $(TOP) $(shell find ./sv2v -name '*.v')
 endif
