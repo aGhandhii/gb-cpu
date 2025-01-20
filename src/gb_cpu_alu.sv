@@ -1,126 +1,122 @@
+import gb_cpu_common_pkg::*;
 /* ALU module for the gameboy CPU
 
 Handles 8-bit operations and sets flags
 
 Inputs:
     instruction: contains operand registers and ALU opcode
-    CARRY_IN: current carry flag - used for certain rotations
+    carry_in: current carry flag - used for certain rotations
 
 Outputs:
-    OUT  - 8-bit result
+    out  - 8-bit result
     Z    - Zero Flag
     N    - Subtract Flag
     H    - Half-Carry Flag
     C    - Carry Flag
 */
-import gb_cpu_common_pkg::*;
-
 module gb_cpu_alu (
-    gb_instruction_t instruction,
-    input logic [7:0] IN_0,
-    IN_1,
-    input logic CARRY_IN,
-    output logic [7:0] OUT,
+    alu_instruction_t instruction,
+    input logic carry_in,
+    output logic [7:0] out,
     output logic Z,
     N,
     H,
     C
 );
-
     always_comb begin
         case (instruction.opcode)
             ADD: begin
-                OUT = IN_0 + IN_1;
+                out = instruction.operand_a + instruction.operand_b + carry_in;
                 N   = 1'b0;
-                H   = ({1'b0, IN_0[3:0]} + {1'b0, IN_1[3:0]}) > 5'h0F;
-                C   = ({1'b0, IN_0} + {1'b0, IN_1}) > 9'h0FF;
+                H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
+                C   = ({1'b0, instruction.operand_a} + {1'b0, instruction.operand_b}) > 9'h0FF;
             end
             SUB: begin
-                OUT = IN_0 - IN_1;
+                out = instruction.operand_a - instruction.operand_b;
                 N   = 1'b1;
-                H   = ({1'b0, IN_0[3:0]} + {1'b0, IN_1[3:0]}) > 5'h0F;
-                C   = ({1'b0, IN_0} + {1'b0, IN_1}) > 9'h0FF;
+                H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
+                C   = ({1'b0, instruction.operand_a} + {1'b0, instruction.operand_b}) > 9'h0FF;
             end
             AND: begin
-                OUT = IN_0 & IN_1;
+                out = instruction.operand_a & instruction.operand_b;
                 N   = 1'b0;
                 H   = 1'b1;
                 C   = 1'b0;
             end
             OR: begin
-                OUT = IN_0 | IN_1;
+                out = instruction.operand_a | instruction.operand_b;
                 N   = 1'b0;
                 H   = 1'b0;
                 C   = 1'b0;
             end
             XOR: begin
-                OUT = IN_0 ^ IN_1;
+                out = instruction.operand_a ^ instruction.operand_b;
                 N   = 1'b0;
                 H   = 1'b0;
                 C   = 1'b0;
             end
             SHIFT_L: begin
-                OUT = {IN_0[6:0], 1'b0};
+                out = {instruction.operand_a[6:0], 1'b0};
                 N   = 1'b0;
                 H   = 1'b0;
-                C   = IN_0[7];
+                C   = instruction.operand_a[7];
             end
             SHIFT_R_ARITH: begin
-                OUT = {IN_0[7], IN_0[7:1]};
+                out = {instruction.operand_a[7], instruction.operand_a[7:1]};
                 N   = 1'b0;
                 H   = 1'b0;
-                C   = IN_0[0];  // Carry is low-bit
+                C   = instruction.operand_a[0];  // Carry is low-bit
             end
             SHIFT_R_LOGIC: begin
-                OUT = {1'b0, IN_0[7:1]};
+                out = {1'b0, instruction.operand_a[7:1]};
                 N   = 1'b0;
                 H   = 1'b0;
-                C   = IN_0[0];  // Carry is low-bit
+                C   = instruction.operand_a[0];  // Carry is low-bit
             end
             ROTL: begin
-                OUT = {IN_0[6:0], IN_0[7]};
+                out = {instruction.operand_a[6:0], instruction.operand_a[7]};
                 N   = 1'b0;
                 H   = 1'b0;
-                C   = IN_0[7];
+                C   = instruction.operand_a[7];
             end
             ROTL_CARRY: begin
-                OUT = {IN_0[6:0], CARRY_IN};
+                out = {instruction.operand_a[6:0], carry_in};
                 N   = 1'b0;
                 H   = 1'b0;
-                C   = IN_0[7];
+                C   = instruction.operand_a[7];
             end
             ROTR: begin
-                OUT = {1'b0, IN_0[7:1]};
+                out = {1'b0, instruction.operand_a[7:1]};
                 N   = 1'b0;
                 H   = 1'b0;
-                C   = IN_0[0];  // Carry is low-bit
+                C   = instruction.operand_a[0];  // Carry is low-bit
             end
             ROTR_CARRY: begin
-                OUT = {CARRY_IN, IN_0[7:1]};
+                out = {carry_in, instruction.operand_a[7:1]};
                 N   = 1'b0;
                 H   = 1'b0;
-                C   = IN_0[0];  // Carry is low-bit
+                C   = instruction.operand_a[0];  // Carry is low-bit
             end
             BIT: begin
                 N = 1'b0;
                 H = 1'b1;
             end
             SET: begin
-                OUT = IN_0;
-                OUT[IN_1[2:0]] = 1'b1;
+                out = instruction.operand_a;
+                out[instruction.operand_b[2:0]] = 1'b1;
             end
             RESET: begin
-                OUT = IN_0;
-                OUT[IN_1[2:0]] = 1'b0;
+                out = instruction.operand_a;
+                out[instruction.operand_b[2:0]] = 1'b0;
             end
             SWAP: begin
-                OUT = {IN_0[3:0], IN_0[7:4]};
+                out = {instruction.operand_a[3:0], instruction.operand_a[7:4]};
                 C   = 1'b0;
                 H   = 1'b0;
                 N   = 1'b0;
             end
             default: begin
-                OUT = 8'bxxxx_xxxx;
+                out = 8'bxxxx_xxxx;
                 C   = 1'bx;
                 H   = 1'bx;
                 N   = 1'bx;
@@ -128,7 +124,9 @@ module gb_cpu_alu (
         endcase
     end
 
-    // Set Zero Flag
-    assign Z = (instruction.opcode == BIT) ? (~IN_0[IN_1[2:0]]) : (OUT == 0);
+    always_comb begin : setZeroFlag
+        if (instruction.opcode == BIT) Z = ~instruction.operand_a[instruction.operand_b[2:0]];
+        else Z = (out == 0);
+    end : setZeroFlag
 
 endmodule : gb_cpu_alu

@@ -19,7 +19,13 @@ package gb_cpu_common_pkg;
         SET,
         RESET,
         SWAP
-    } gb_opcode_t;
+    } alu_opcode_t;
+
+    typedef struct {
+        logic [7:0]  operand_a;
+        logic [7:0]  operand_b;
+        alu_opcode_t opcode;
+    } alu_instruction_t;
 
     typedef enum logic [3:0] {
         REG_A,
@@ -30,14 +36,10 @@ package gb_cpu_common_pkg;
         REG_F,
         REG_H,
         REG_L,
+        REG_IR,
+        REG_IE,
         PC,
         SP
-    } gb_operand_t;
-
-    typedef struct {
-        gb_operand_t operand_a;
-        gb_operand_t operand_b;
-        gb_opcode_t  opcode;
-    } gb_instruction_t;
+    } gb_cpu_registers_t;
 
 endpackage : gb_cpu_common_pkg
