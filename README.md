@@ -1,4 +1,4 @@
-** Resources
+*RESOURCES
 
 [GameBoy Instruction Set](https://gbdev.io/gb-opcodes/optables/)
 
