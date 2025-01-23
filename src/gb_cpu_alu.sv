@@ -26,7 +26,7 @@ module gb_cpu_alu (
     always_comb begin
         case (instruction.opcode)
             ADD: begin
-                out = instruction.operand_a + instruction.operand_b + carry_in;
+                out = instruction.operand_a + instruction.operand_b + {{7{1'b0}}, carry_in};
                 N   = 1'b0;
                 H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
                 C   = ({1'b0, instruction.operand_a} + {1'b0, instruction.operand_b}) > 9'h0FF;
@@ -98,16 +98,24 @@ module gb_cpu_alu (
                 C   = instruction.operand_a[0];  // Carry is low-bit
             end
             BIT: begin
-                N = 1'b0;
-                H = 1'b1;
+                out = 8'bxxxx_xxxx;
+                N   = 1'b0;
+                H   = 1'b1;
+                C   = 1'bx;
             end
             SET: begin
                 out = instruction.operand_a;
                 out[instruction.operand_b[2:0]] = 1'b1;
+                N   = 1'bx;
+                H   = 1'bx;
+                C   = 1'bx;
             end
             RESET: begin
                 out = instruction.operand_a;
                 out[instruction.operand_b[2:0]] = 1'b0;
+                N   = 1'bx;
+                H   = 1'bx;
+                C   = 1'bx;
             end
             SWAP: begin
                 out = {instruction.operand_a[3:0], instruction.operand_a[7:4]};

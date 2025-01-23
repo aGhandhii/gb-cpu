@@ -1,7 +1,6 @@
 # Conditional Compilation Rules
-# Verilator doesn't have a native windows port
-WINDOWS         = 1
-ICARUS          = 1
+WINDOWS         =
+ICARUS          =
 VERILATOR       =
 
 # Setup
@@ -9,13 +8,14 @@ PROJ            = Project
 BUILD_DIR       = ./build
 SIM_DIR         = ./sim
 SV2V_DIR        = ./sv2v
+VERILATOR_DIR	= ./obj_dir
 TEST_BIN        = $(SIM_DIR)/$(TOP).vvp
-TEST_WAVE       = $(SIM_DIR)/$(TOP).vcd
+TEST_WAVE       = $(SIM_DIR)/$(TOP).fst
 TEST_LOG        = $(SIM_DIR)/$(TOP).log
 
 # RTL Files
-TOP             = decoder_tb
-TESTBENCH       = ./test/decoder_tb.sv
+TOP             =
+TESTBENCH       =
 ifdef WINDOWS
 RTL_FILES       = $(shell fd -e sv -e svh -e v . '.\src')
 else
@@ -62,18 +62,22 @@ else
 	iverilog -o $(TEST_BIN) -s $(TOP) $(shell find ./sv2v -name '*.v')
 endif
 	# Run simulation results - obtain wave file if generated
-	vvp -l $(TEST_LOG) -n $(TEST_BIN)
+	vvp -l $(TEST_LOG) -n $(TEST_BIN) -fst
 	# TODO: only peform if waveform is created
-	mv $(TOP).vcd $(TEST_WAVE)
+	mv $(TOP).fst $(TEST_WAVE)
 	# Open the wave file in a waveform viewer
-	surfer $(TEST_WAVE)
+	surfer.exe $(TEST_WAVE)
 endif
 ifdef VERILATOR
-	# Untested
-	verilator_bin -CFLAGS -fcoroutines --binary --timing --trace  --top-module $(TOP) $(RTL_FILES) $(TESTBENCH)
+	verilator -CFLAGS -fcoroutines --binary --timing --trace-structs --trace-params --trace-fst --top-module $(TOP) $(RTL_FILES) $(TESTBENCH)
+	$(VERILATOR_DIR)/V$(TOP) > $(TEST_LOG)
+	mv $(TOP).fst $(TEST_WAVE)
+	cat $(TEST_LOG)
+	surfer.exe $(TEST_WAVE)
 endif
 
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -rf $(SIM_DIR)
 	rm -rf $(SV2V_DIR)
+	rm -rf $(VERILATOR_DIR)
