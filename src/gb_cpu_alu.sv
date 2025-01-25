@@ -106,16 +106,16 @@ module gb_cpu_alu (
             SET: begin
                 out = instruction.operand_a;
                 out[instruction.operand_b[2:0]] = 1'b1;
-                N   = 1'bx;
-                H   = 1'bx;
-                C   = 1'bx;
+                N = 1'bx;
+                H = 1'bx;
+                C = 1'bx;
             end
             RESET: begin
                 out = instruction.operand_a;
                 out[instruction.operand_b[2:0]] = 1'b0;
-                N   = 1'bx;
-                H   = 1'bx;
-                C   = 1'bx;
+                N = 1'bx;
+                H = 1'bx;
+                C = 1'bx;
             end
             SWAP: begin
                 out = {instruction.operand_a[3:0], instruction.operand_a[7:4]};

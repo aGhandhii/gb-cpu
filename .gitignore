@@ -1,6 +1,8 @@
 *verible*
+veridian.yml
 tags
 sv2v/*
 build/*
 sim/*
+obj_dir/*
 *icebreaker*

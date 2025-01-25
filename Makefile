@@ -46,8 +46,8 @@ prog: $(BUILD_DIR)/$(PROJ).bin
 	iceprog $(BUILD_DIR)/$(PROJ).bin
 
 sv2v:
-	# Convert SystemVerilog to Verilog - needed for Icarus
 ifdef ICARUS
+	# Convert SystemVerilog to Verilog - needed for Icarus
 	mkdir -p $(SV2V_DIR)
 	sv2v --write=$(SV2V_DIR) --top=$(TOP) $(TESTBENCH) $(RTL_FILES)
 endif
@@ -69,10 +69,13 @@ endif
 	surfer.exe $(TEST_WAVE)
 endif
 ifdef VERILATOR
+	# Verilate the design
 	verilator -CFLAGS -fcoroutines --binary --timing --trace-structs --trace-params --trace-fst --top-module $(TOP) $(RTL_FILES) $(TESTBENCH)
+	# Dump the simulation log
 	$(VERILATOR_DIR)/V$(TOP) > $(TEST_LOG)
 	mv $(TOP).fst $(TEST_WAVE)
 	cat $(TEST_LOG)
+	# Open the wave file in a waveform viewer
 	surfer.exe $(TEST_WAVE)
 endif
 

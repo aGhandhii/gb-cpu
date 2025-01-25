@@ -1,5 +1,4 @@
 // Package imports for GameBoy CPU
-
 package gb_cpu_common_pkg;
 
     typedef enum logic [3:0] {

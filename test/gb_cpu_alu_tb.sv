@@ -1,4 +1,3 @@
-// Testbench for the ALU
 module gb_cpu_alu_tb ();
 
     import gb_cpu_common_pkg::*;
@@ -17,14 +16,16 @@ module gb_cpu_alu_tb ();
     // Instance
     gb_cpu_alu dut (.*);
 
-    function void getALUInfo();
-        $display(
-            "Testing operation %s\nInputs: %d and %d",
-            instruction.opcode.name(),
-            instruction.operand_a,
-            instruction.operand_b
-        );
+    function automatic void getALUInfo();
+        $display("Testing operation %s\nInputs: %d and %d", instruction.opcode.name(), instruction.operand_a,
+                 instruction.operand_b);
     endfunction : getALUInfo
+
+    function automatic logic [7:0] getRandOperand();
+        logic [31:0] randVal;
+        randVal = $urandom();
+        return randVal[7:0];
+    endfunction : getRandOperand
 
     initial begin
         // Dump Simulation Data
@@ -33,27 +34,27 @@ module gb_cpu_alu_tb ();
 
         carry_in = 0;
 
-        instruction.operand_a = $random()[7:0];
-        instruction.operand_b = $random()[7:0];
+        instruction.operand_a = getRandOperand();
+        instruction.operand_b = getRandOperand();
         instruction.opcode    = ADD;
         getALUInfo();
         #1;
         $display("Result: %d", out);
 
-        instruction.operand_a = $random()[7:0];
-        instruction.operand_b = $random()[7:0];
+        instruction.operand_a = getRandOperand();
+        instruction.operand_b = getRandOperand();
         instruction.opcode    = SUB;
         getALUInfo();
         #1;
         $display("Result: %d", out);
 
-        instruction.operand_a = $random()[7:0];
-        instruction.operand_b = $random()[7:0];
+        instruction.operand_a = getRandOperand();
+        instruction.operand_b = getRandOperand();
         instruction.opcode    = XOR;
         getALUInfo();
         #1;
         $display("Result: %d", out);
-        
+
         $finish();
     end
 
