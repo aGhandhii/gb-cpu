@@ -2,139 +2,221 @@ import gb_cpu_common_pkg::*;
 /* ALU module for the gameboy CPU
 
 Handles 8-bit operations and sets flags
+    Z = Zero Flag
+    N = Subtract Flag
+    H = Half-Carry Flag
+    C = Carry Flag
 
 Inputs:
-    instruction: contains operand registers and ALU opcode
-    carry_in: current carry flag - used for certain rotations
+    instruction - contains operands and opcode
+    flags_i     - flags from previous operation
 
 Outputs:
-    out  - 8-bit result
-    Z    - Zero Flag
-    N    - Subtract Flag
-    H    - Half-Carry Flag
-    C    - Carry Flag
+    out         - 8-bit result
+    flags_o     - flag results from operation
+
 */
 module gb_cpu_alu (
     alu_instruction_t instruction,
-    input logic carry_in,
+    input alu_flags_t flags_i,
     output logic [7:0] out,
-    output logic Z,
-    N,
-    H,
-    C
+    output alu_flags_t flags_o
 );
     always_comb begin
         case (instruction.opcode)
+            NOP: begin
+                out = instruction.operand_a;
+                flags_o.C = flags_i.C;
+                flags_o.N = flags_i.N;
+                flags_o.H = flags_i.H;
+            end
             ADD: begin
-                out = instruction.operand_a + instruction.operand_b + {{7{1'b0}}, carry_in};
-                N   = 1'b0;
-                H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
-                C   = ({1'b0, instruction.operand_a} + {1'b0, instruction.operand_b}) > 9'h0FF;
+                {flags_o.C, out} = {1'b0, instruction.operand_a} + {1'b0, instruction.operand_b};
+                flags_o.N = 1'b0;
+                flags_o.H = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
+            end
+            ADC: begin
+                {flags_o.C, out} = {1'b0, instruction.operand_a} + {1'b0, instruction.operand_b} + {8'h00, flags_i.C};
+                flags_o.N = 1'b0;
+                flags_o.H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]} + {4'h0, flags_i.C}) > 5'h0F;
             end
             SUB: begin
-                out = instruction.operand_a - instruction.operand_b;
-                N   = 1'b1;
-                H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
-                C   = ({1'b0, instruction.operand_a} + {1'b0, instruction.operand_b}) > 9'h0FF;
+                {flags_o.C, out} = {instruction.operand_a[7], instruction.operand_a} - {instruction.operand_b[7], instruction.operand_b};
+                flags_o.N = 1'b1;
+                flags_o.H = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
+            end
+            SBC: begin
+                {flags_o.C, out} = {instruction.operand_a[7], instruction.operand_a} - {instruction.operand_b[7], instruction.operand_b} - {8'h00, flags_i.C};
+                flags_o.N = 1'b1;
+                flags_o.H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]} + {4'h0, flags_i.C}) > 5'h0F;
             end
             AND: begin
                 out = instruction.operand_a & instruction.operand_b;
-                N   = 1'b0;
-                H   = 1'b1;
-                C   = 1'b0;
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b1;
+                flags_o.C = 1'b0;
             end
             OR: begin
                 out = instruction.operand_a | instruction.operand_b;
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = 1'b0;
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = 1'b0;
             end
             XOR: begin
                 out = instruction.operand_a ^ instruction.operand_b;
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = 1'b0;
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = 1'b0;
             end
-            SHIFT_L: begin
+            CCF: begin
+                out = 8'bxxxx_xxxx;
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = ~flags_i.C;
+            end
+            SCF: begin
+                out = 8'bxxxx_xxxx;
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = 1'b1;
+            end
+            DAA: begin
+                flags_o.N = flags_i.N;
+                flags_o.H = 1'b0;
+                if (flags_i.N) begin
+                    case ({
+                        flags_i.C, flags_i.H
+                    })
+                        00: begin
+                            out = instruction.operand_a;
+                            flags_o.C = 1'b0;
+                        end
+                        01: begin
+                            out = instruction.operand_a - 8'h06;
+                            flags_o.C = (8'h06 > instruction.operand_a);
+                        end
+                        10: begin
+                            out = instruction.operand_a - 8'h60;
+                            flags_o.C = (8'h60 > instruction.operand_a);
+                        end
+                        11: begin
+                            out = instruction.operand_a - 8'h66;
+                            flags_o.C = (8'h66 > instruction.operand_a);
+                        end
+                        default: begin
+                            out = 8'bxxxx_xxxx;
+                            flags_o.C = 1'bx;
+                        end
+                    endcase
+                end else begin
+                    case ({
+                        (flags_i.C || (instruction.operand_a[7:4] > 4'h9)),
+                        (flags_i.H || (instruction.operand_a[3:0] > 4'h9))
+                    })
+                        00: begin
+                            out = instruction.operand_a;
+                            flags_o.C = 1'b0;
+                        end
+                        01: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h006;
+                        10: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h060;
+                        11: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h066;
+                        default: begin
+                            out = 8'bxxxx_xxxx;
+                            flags_o.C = 1'bx;
+                        end
+                    endcase
+                end
+            end
+            CPL: begin
+                out = ~instruction.operand_a;
+                flags_o.N = 1'b1;
+                flags_o.H = 1'b1;
+                flags_o.C = flags_i.C;
+            end
+            SLA: begin
                 out = {instruction.operand_a[6:0], 1'b0};
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = instruction.operand_a[7];
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = instruction.operand_a[7];
             end
-            SHIFT_R_ARITH: begin
+            SRA: begin
                 out = {instruction.operand_a[7], instruction.operand_a[7:1]};
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = instruction.operand_a[0];  // Carry is low-bit
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = instruction.operand_a[0];  // Carry is low-bit
             end
-            SHIFT_R_LOGIC: begin
+            SRL: begin
                 out = {1'b0, instruction.operand_a[7:1]};
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = instruction.operand_a[0];  // Carry is low-bit
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = instruction.operand_a[0];  // Carry is low-bit
             end
-            ROTL: begin
+            RL, RLA: begin
                 out = {instruction.operand_a[6:0], instruction.operand_a[7]};
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = instruction.operand_a[7];
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = instruction.operand_a[7];
             end
-            ROTL_CARRY: begin
-                out = {instruction.operand_a[6:0], carry_in};
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = instruction.operand_a[7];
+            RLC, RLCA: begin
+                out = {instruction.operand_a[6:0], flags_i.C};
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = instruction.operand_a[7];
             end
-            ROTR: begin
+            RR, RRA: begin
                 out = {1'b0, instruction.operand_a[7:1]};
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = instruction.operand_a[0];  // Carry is low-bit
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = instruction.operand_a[0];  // Carry is low-bit
             end
-            ROTR_CARRY: begin
-                out = {carry_in, instruction.operand_a[7:1]};
-                N   = 1'b0;
-                H   = 1'b0;
-                C   = instruction.operand_a[0];  // Carry is low-bit
+            RRC, RRCA: begin
+                out = {flags_i.C, instruction.operand_a[7:1]};
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = instruction.operand_a[0];  // Carry is low-bit
             end
             BIT: begin
                 out = 8'bxxxx_xxxx;
-                N   = 1'b0;
-                H   = 1'b1;
-                C   = 1'bx;
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b1;
+                flags_o.C = flags_i.C;
             end
             SET: begin
                 out = instruction.operand_a;
                 out[instruction.operand_b[2:0]] = 1'b1;
-                N = 1'bx;
-                H = 1'bx;
-                C = 1'bx;
+                flags_o.N = flags_i.N;
+                flags_o.H = flags_i.H;
+                flags_o.C = flags_i.C;
             end
-            RESET: begin
+            RES: begin
                 out = instruction.operand_a;
                 out[instruction.operand_b[2:0]] = 1'b0;
-                N = 1'bx;
-                H = 1'bx;
-                C = 1'bx;
+                flags_o.N = flags_i.N;
+                flags_o.H = flags_i.H;
+                flags_o.C = flags_i.C;
             end
             SWAP: begin
                 out = {instruction.operand_a[3:0], instruction.operand_a[7:4]};
-                C   = 1'b0;
-                H   = 1'b0;
-                N   = 1'b0;
+                flags_o.C = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.N = 1'b0;
             end
             default: begin
-                out = 8'bxxxx_xxxx;
-                C   = 1'bx;
-                H   = 1'bx;
-                N   = 1'bx;
+                out       = 8'bxxxx_xxxx;
+                flags_o.C = 1'bx;
+                flags_o.H = 1'bx;
+                flags_o.N = 1'bx;
             end
         endcase
     end
 
     always_comb begin : setZeroFlag
-        if (instruction.opcode == BIT) Z = ~instruction.operand_a[instruction.operand_b[2:0]];
-        else Z = (out == 0);
+        if (instruction.opcode == BIT) flags_o.Z = ~instruction.operand_a[instruction.operand_b[2:0]];
+        else if (instruction.opcode == PASS || instruction.opcode == SET || instruction.opcode == RES)
+            flags_o.Z = flags_i.Z;
+        else if (instruction.opcode == RRCA || instruction.opcode == RLCA || instruction.opcode == RRA || instruction.opcode == RLA)
+            flags_o.Z = 1'b0;
+        else flags_o.Z = (out == 8'h00);
     end : setZeroFlag
 
 endmodule : gb_cpu_alu

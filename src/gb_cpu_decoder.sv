@@ -3,6 +3,9 @@ import gb_cpu_common_pkg::*;
 
 Reads in CISC Instructions and sets control signals accordingly
 
+Based on the Pan Docs 'CPU Instruction Set' page
+https://gbdev.io/pandocs/CPU_Instruction_Set.html
+
 Inputs:
     decoder_state   - Current decoder state
     opcode          - 8-bit instruction
@@ -17,8 +20,6 @@ module gb_cpu_decoder (
     control_signals_t control_signals
 );
 
-    // Based on the Pan Docs 'CPU Instruction Set' page
-    // https://gbdev.io/pandocs/CPU_Instruction_Set.html
     always_comb begin : decoderCombinationalLogic
 
         case (decoder_state)

@@ -1,19 +1,32 @@
 // Package imports for GameBoy CPU
 package gb_cpu_common_pkg;
 
-    typedef enum logic [3:0] {
+    // ALU {{{
+
+    typedef enum logic [4:0] {
+        NOP,
         ADD,
+        ADC,
         SUB,
+        SBC,
         AND,
         OR,
         XOR,
-        SHIFT_L,
-        SHIFT_R_ARITH,
-        SHIFT_R_LOGIC,
-        ROTL,
-        ROTL_CARRY,
-        ROTR,
-        ROTR_CARRY,
+        CCF,
+        SCF,
+        DAA,
+        CPL,
+        SLA,
+        SRA,
+        SRL,
+        RL,
+        RLA,
+        RLC,
+        RLCA,
+        RR,
+        RRA,
+        RRC,
+        RRCA,
         BIT,
         SET,
         RESET,
@@ -25,6 +38,17 @@ package gb_cpu_common_pkg;
         logic [7:0]  operand_b;
         alu_opcode_t opcode;
     } alu_instruction_t;
+
+    typedef struct {
+        logic Z;
+        logic N;
+        logic H;
+        logic C;
+    } alu_flags_t;
+
+    // }}}
+
+    // DECODER {{{
 
     typedef enum logic [2:0] {
         READ_OPCODE,
@@ -79,6 +103,10 @@ package gb_cpu_common_pkg;
         opcode_r16stk_t r16stk;
         opcode_r16mem_t r16mem;
         opcode_cond_t   cond;
+        logic [2:0]     bitIndex;
+        logic [7:0]     rst_target_addr;
     } control_signals_t;
+
+    // }}}
 
 endpackage : gb_cpu_common_pkg
