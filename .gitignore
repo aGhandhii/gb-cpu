@@ -6,3 +6,5 @@ build/*
 sim/*
 obj_dir/*
 *icebreaker*
+*.fst
+*.vcd

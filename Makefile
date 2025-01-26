@@ -76,9 +76,8 @@ ifdef VERILATOR
 	# Dump the simulation log
 	$(VERILATOR_DIR)/V$(TOP) > $(TEST_LOG)
 	cat $(TEST_LOG)
-ifdef WAVES
-	# Loading Waveform
 	mv $(TOP).fst $(TEST_WAVE)
+ifdef WAVES
 	surfer.exe $(TEST_WAVE)
 endif
 endif

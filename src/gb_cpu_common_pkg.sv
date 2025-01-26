@@ -73,4 +73,12 @@ package gb_cpu_common_pkg;
         cond_c  = 2'b11
     } opcode_cond_t;
 
+    typedef struct {
+        opcode_r8_t     r8;
+        opcode_r16_t    r16;
+        opcode_r16stk_t r16stk;
+        opcode_r16mem_t r16mem;
+        opcode_cond_t   cond;
+    } control_signals_t;
+
 endpackage : gb_cpu_common_pkg
