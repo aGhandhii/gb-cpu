@@ -1,0 +1,158 @@
+import gb_cpu_common_pkg::*;
+/* Instruction Decoder for the gameboy CPU
+
+Reads in CISC Instructions and sets control signals accordingly
+
+Inputs:
+    decoder_state   - Current decoder state
+    opcode          - 8-bit instruction
+
+Outputs:
+    decoder_control_signals
+
+*/
+module gb_cpu_decoder (
+    input logic [23:0] instruction,
+    input clk
+);
+
+    // Easy access to important wires
+    logic [7:0] opcodeByte0, opcodeByte1, opcodeByte2;
+    assign opcodeByte0 = instruction[23:16];
+    assign opcodeByte1 = instruction[15:8];
+    assign opcodeByte2 = instruction[7:0];
+
+    // Based on the Pan Docs 'CPU Instruction Set' page
+    // https://gbdev.io/pandocs/CPU_Instruction_Set.html
+    always_ff @(posedge clk) begin : decoderCombinationalLogic
+
+        case (opcodeByte0) inside
+
+            /////////////
+            // Block 0 //
+            /////////////
+
+            8'b00_000000: $display("No Op");
+            8'b00_??0001: $display("ld  r16, imm16");
+            8'b00_??0010: $display("ld  [r16mem], a");
+            8'b00_??1010: $display("ld  a, [r16mem]");
+            8'b00_001000: $display("ld  [imm16], sp");
+            8'b00_??0011: $display("inc r16");
+            8'b00_??1011: $display("dec r16");
+            8'b00_??1001: $display("add hl, r16");
+            8'b00_???100: $display("inc r8");
+            8'b00_???101: $display("dec r8");
+            8'b00_???110: $display("ld  r8 imm8");
+            8'b00_000111: $display("rlca");
+            8'b00_001111: $display("rrca");
+            8'b00_010111: $display("rla");
+            8'b00_011111: $display("rra");
+            8'b00_100111: $display("daa");
+            8'b00_101111: $display("cpl");
+            8'b00_110111: $display("scf");
+            8'b00_111111: $display("ccf");
+            8'b00_011000: $display("jr  imm8");
+            8'b00_1??000: $display("jr  cond, imm8");
+            8'b00_010000: $display("stop");  // has a special condition
+
+            /////////////
+            // Block 1 //
+            /////////////
+
+            8'b01_??????: begin
+                if (opcodeByte0 == 8'b01_110110) $display("halt");
+                else $display("ld r8, r8");
+            end
+
+            /////////////
+            // Block 2 //
+            /////////////
+
+            8'b10_000_???: $display("add a, r8");
+            8'b10_001_???: $display("adc a, r8");
+            8'b10_010_???: $display("sub a, r8");
+            8'b10_011_???: $display("sbc a, r8");
+            8'b10_100_???: $display("and a, r8");
+            8'b10_101_???: $display("xor a, r8");
+            8'b10_110_???: $display("or  a, r8");
+            8'b10_111_???: $display("cp  a, r8");
+
+            /////////////
+            // Block 3 //
+            /////////////
+
+            8'b11_000_110: $display("add a, imm8");
+            8'b11_001_110: $display("adc a, imm8");
+            8'b11_010_110: $display("sub a, imm8");
+            8'b11_011_110: $display("sbc a, imm8");
+            8'b11_100_110: $display("and a, imm8");
+            8'b11_101_110: $display("xor a, imm8");
+            8'b11_110_110: $display("or  a, imm8");
+            8'b11_111_110: $display("cp  a, imm8");
+
+            8'b11_0??000: $display("ret cond");
+            8'b11_001001: $display("ret");
+            8'b11_011001: $display("reti");
+            8'b11_0??010: $display("jp  cond, imm16");
+            8'b11_000011: $display("jp  imm16");
+            8'b11_101001: $display("jp  hl");
+            8'b11_0??100: $display("call cond, imm16");
+            8'b11_001101: $display("call imm16");
+            8'b11_???111: $display("rst tgt3");
+
+            8'b11_??0001: $display("pop r16stk");
+            8'b11_??0101: $display("push r16stk");
+
+            8'b111_0001_0: $display("ldh [c], a");
+            8'b111_0000_0: $display("ldh [imm8], a");
+            8'b111_0101_0: $display("ld  [imm16], a");
+            8'b111_1001_0: $display("ldh a, [c]");
+            8'b111_1000_0: $display("ldh a, [imm8]");
+            8'b111_1101_0: $display("ld  a, [imm16]");
+
+            8'b11_101000: $display("add sp, imm8");
+            8'b11_111000: $display("ld  hl, sp + imm8");
+            8'b11_111001: $display("ld  sp, hl");
+
+            8'b11_110011: $display("di");
+            8'b11_111011: $display("ei");
+
+            8'hCB: begin : CBprefix
+                case (opcodeByte1) inside
+
+                    8'b00_000_???: $display("rlc r8");
+                    8'b00_001_???: $display("rrc r8");
+                    8'b00_010_???: $display("rl  r8");
+                    8'b00_011_???: $display("rr  r8");
+                    8'b00_100_???: $display("sla r8");
+                    8'b00_101_???: $display("sra r8");
+                    8'b00_110_???: $display("swap r8");
+                    8'b00_111_???: $display("srl r8");
+
+                    8'b01_???_???: $display("bit b3, r8");
+                    8'b10_???_???: $display("res b3, r8");
+                    8'b11_???_???: $display("set b3, r8");
+
+                    default: $display("Bad Opcode");
+                endcase
+            end : CBprefix
+
+            8'hD3: $display("Hard Lock");
+            8'hDB: $display("Hard Lock");
+            8'hDD: $display("Hard Lock");
+            8'hE3: $display("Hard Lock");
+            8'hE4: $display("Hard Lock");
+            8'hEB: $display("Hard Lock");
+            8'hEC: $display("Hard Lock");
+            8'hED: $display("Hard Lock");
+            8'hF4: $display("Hard Lock");
+            8'hFC: $display("Hard Lock");
+            8'hFD: $display("Hard Lock");
+
+            default: $display("Bad Opcode");
+
+        endcase
+
+    end : decoderCombinationalLogic
+
+endmodule : gb_cpu_decoder

@@ -1,5 +1,6 @@
 # Conditional Compilation Rules
 WINDOWS         =
+WAVES			=
 ICARUS          =
 VERILATOR       =
 
@@ -15,7 +16,7 @@ TEST_LOG        = $(SIM_DIR)/$(TOP).log
 
 # RTL Files
 TOP             =
-TESTBENCH       =
+TESTBENCH       = ./test/$(TOP).sv
 ifdef WINDOWS
 RTL_FILES       = $(shell fd -e sv -e svh -e v . '.\src')
 else
@@ -61,22 +62,25 @@ ifdef WINDOWS
 else
 	iverilog -o $(TEST_BIN) -s $(TOP) $(shell find ./sv2v -name '*.v')
 endif
-	# Run simulation results - obtain wave file if generated
+	# Run simulation results
 	vvp -l $(TEST_LOG) -n $(TEST_BIN) -fst
-	# TODO: only peform if waveform is created
+ifdef WAVES
+	# Loading Waveform
 	mv $(TOP).fst $(TEST_WAVE)
-	# Open the wave file in a waveform viewer
 	surfer.exe $(TEST_WAVE)
+endif
 endif
 ifdef VERILATOR
 	# Verilate the design
 	verilator -CFLAGS -fcoroutines --binary --timing --trace-structs --trace-params --trace-fst --top-module $(TOP) $(RTL_FILES) $(TESTBENCH)
 	# Dump the simulation log
 	$(VERILATOR_DIR)/V$(TOP) > $(TEST_LOG)
-	mv $(TOP).fst $(TEST_WAVE)
 	cat $(TEST_LOG)
-	# Open the wave file in a waveform viewer
+ifdef WAVES
+	# Loading Waveform
+	mv $(TOP).fst $(TEST_WAVE)
 	surfer.exe $(TEST_WAVE)
+endif
 endif
 
 clean:
