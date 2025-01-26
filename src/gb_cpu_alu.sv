@@ -14,7 +14,6 @@ Inputs:
 Outputs:
     out         - 8-bit result
     flags_o     - flag results from operation
-
 */
 module gb_cpu_alu (
     alu_instruction_t instruction,
@@ -24,7 +23,7 @@ module gb_cpu_alu (
 );
     always_comb begin
         case (instruction.opcode)
-            NOP: begin
+            ALU_NOP: begin
                 out = instruction.operand_a;
                 flags_o.C = flags_i.C;
                 flags_o.N = flags_i.N;
@@ -212,7 +211,7 @@ module gb_cpu_alu (
 
     always_comb begin : setZeroFlag
         if (instruction.opcode == BIT) flags_o.Z = ~instruction.operand_a[instruction.operand_b[2:0]];
-        else if (instruction.opcode == PASS || instruction.opcode == SET || instruction.opcode == RES)
+        else if (instruction.opcode == ALU_NOP || instruction.opcode == SET || instruction.opcode == RES)
             flags_o.Z = flags_i.Z;
         else if (instruction.opcode == RRCA || instruction.opcode == RLCA || instruction.opcode == RRA || instruction.opcode == RLA)
             flags_o.Z = 1'b0;

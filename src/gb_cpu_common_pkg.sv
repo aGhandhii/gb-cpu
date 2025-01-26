@@ -4,7 +4,7 @@ package gb_cpu_common_pkg;
     // ALU {{{
 
     typedef enum logic [4:0] {
-        NOP,
+        ALU_NOP,
         ADD,
         ADC,
         SUB,
@@ -45,6 +45,16 @@ package gb_cpu_common_pkg;
         logic H;
         logic C;
     } alu_flags_t;
+
+    // }}}
+
+    // IDU {{{
+
+    typedef enum logic [1:0] {
+        IDU_NOP,
+        IDU_INC,
+        IDU_DEC
+    } idu_opcode_t;
 
     // }}}
 
@@ -106,6 +116,10 @@ package gb_cpu_common_pkg;
         logic [2:0]     bitIndex;
         logic [7:0]     rst_target_addr;
     } control_signals_t;
+
+    // }}}
+
+    // REGISTER FILE {{{
 
     // }}}
 
