@@ -49,6 +49,24 @@ module gb_cpu_alu (
                 flags_o.N = 1'b1;
                 flags_o.H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]} + {4'h0, flags_i.C}) > 5'h0F;
             end
+            CP: begin
+                out = instruction.operand_a;
+                {flags_o.C, 8'hxx} = {instruction.operand_a[7], instruction.operand_a} - {instruction.operand_b[7], instruction.operand_b};
+                flags_o.N = 1'b1;
+                flags_o.H = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
+            end
+            INC: begin
+                {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'd1;
+                flags_o.N = 1'b0;
+                flags_o.H = ({1'b0, instruction.operand_a[3:0]} + 5'd1) > 5'h0F;
+                flags_o.C = flags_i.C;
+            end
+            DEC: begin
+                {flags_o.C, out} = {1'b0, instruction.operand_a} - 9'd1;
+                flags_o.N = 1'b1;
+                flags_o.H = ({1'b0, instruction.operand_a[3:0]} - 5'd1) > 5'h0F;
+                flags_o.C = flags_i.C;
+            end
             AND: begin
                 out = instruction.operand_a & instruction.operand_b;
                 flags_o.N = 1'b0;

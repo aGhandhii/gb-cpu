@@ -9,6 +9,9 @@ package gb_cpu_common_pkg;
         ADC,
         SUB,
         SBC,
+        CP,
+        INC,
+        DEC,
         AND,
         OR,
         XOR,
@@ -29,7 +32,7 @@ package gb_cpu_common_pkg;
         RRCA,
         BIT,
         SET,
-        RESET,
+        RES,
         SWAP
     } alu_opcode_t;
 
@@ -120,6 +123,27 @@ package gb_cpu_common_pkg;
     // }}}
 
     // REGISTER FILE {{{
+
+    // TODO: will we ever need to read from A or F?
+    typedef enum logic [2:0] {
+        REG_B,
+        REG_C,
+        REG_D,
+        REG_E,
+        REG_H,
+        REG_L,
+        REG_IE,
+        REG_IR
+    } regfile_r8_t;
+
+    typedef enum logic [2:0] {
+        REG_AF,
+        REG_BC,
+        REG_DE,
+        REG_HL,
+        REG_SP,
+        REG_PC
+    } regfile_r16_t;
 
     // }}}
 
