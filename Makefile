@@ -18,9 +18,9 @@ TEST_LOG        = $(SIM_DIR)/$(TOP).log
 TOP             =
 TESTBENCH       = ./test/$(TOP).sv
 ifdef WINDOWS
-RTL_FILES       = $(shell fd -e sv -e svh -e v . '.\src')
+RTL_FILES       = $(shell fd -e sv -e svh -e v . '.\inc') $(shell fd -e sv -e svh -e v . '.\src')
 else
-RTL_FILES       = $(shell find ./src -name '*.sv') $(shell find ./src -name '*.svh') $(shell find ./src -name '*.v')
+RTL_FILES       = $(shell find ./inc -name '*.sv') $(shell find ./src -name '*.sv')
 endif
 
 # Synthesis Files
