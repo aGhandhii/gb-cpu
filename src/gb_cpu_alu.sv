@@ -21,7 +21,11 @@ module gb_cpu_alu (
     output logic [7:0] out,
     output alu_flags_t flags_o
 );
+
+    /* verilator lint_off WIDTHEXPAND */
+    /* verilator lint_off MULTIDRIVEN */
     always_comb begin
+
         case (instruction.opcode)
             ALU_NOP: begin
                 out = instruction.operand_a;
@@ -40,20 +44,22 @@ module gb_cpu_alu (
                 flags_o.H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]} + {4'h0, flags_i.C}) > 5'h0F;
             end
             SUB: begin
-                {flags_o.C, out} = {instruction.operand_a[7], instruction.operand_a} - {instruction.operand_b[7], instruction.operand_b};
+                out = instruction.operand_a - instruction.operand_b;
+                flags_o.C = (instruction.operand_b > instruction.operand_a) ? 1'b1 : 1'b0;
                 flags_o.N = 1'b1;
-                flags_o.H = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
+                flags_o.H = ((({1'b0, instruction.operand_a[3:0]} - {1'b0, instruction.operand_b[3:0]}) & 5'h10) == 5'h10);
             end
             SBC: begin
-                {flags_o.C, out} = {instruction.operand_a[7], instruction.operand_a} - {instruction.operand_b[7], instruction.operand_b} - {8'h00, flags_i.C};
+                out = instruction.operand_a - instruction.operand_b - {7'd0, flags_i.C};
+                flags_o.C = (instruction.operand_b > instruction.operand_a || (instruction.operand_b == instruction.operand_a && flags_i.C == 1'b1)) ? 1'b1: 1'b0;
                 flags_o.N = 1'b1;
-                flags_o.H   = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]} + {4'h0, flags_i.C}) > 5'h0F;
+                flags_o.H   = ((({1'b0, instruction.operand_a[3:0]} - {1'b0, instruction.operand_b[3:0]} - {4'h0, flags_i.C}) & 5'h10) == 5'h10);
             end
             CP: begin
                 out = instruction.operand_a;
-                {flags_o.C, 8'hxx} = {instruction.operand_a[7], instruction.operand_a} - {instruction.operand_b[7], instruction.operand_b};
+                flags_o.C = (instruction.operand_b > instruction.operand_a) ? 1'b1 : 1'b0;
                 flags_o.N = 1'b1;
-                flags_o.H = ({1'b0, instruction.operand_a[3:0]} + {1'b0, instruction.operand_b[3:0]}) > 5'h0F;
+                flags_o.H = ((({1'b0, instruction.operand_a[3:0]} - {1'b0, instruction.operand_b[3:0]}) & 5'h10) == 5'h10);
             end
             INC: begin
                 {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'd1;
@@ -100,45 +106,45 @@ module gb_cpu_alu (
             DAA: begin
                 flags_o.N = flags_i.N;
                 flags_o.H = 1'b0;
-                if (flags_i.N) begin
+                if (flags_i.N == 1'b1) begin
                     case ({
                         flags_i.C, flags_i.H
                     })
-                        00: begin
+                        2'b00: begin
                             out = instruction.operand_a;
                             flags_o.C = 1'b0;
                         end
-                        01: begin
+                        2'b01: begin
                             out = instruction.operand_a - 8'h06;
                             flags_o.C = (8'h06 > instruction.operand_a);
                         end
-                        10: begin
+                        2'b10: begin
                             out = instruction.operand_a - 8'h60;
                             flags_o.C = (8'h60 > instruction.operand_a);
                         end
-                        11: begin
+                        2'b11: begin
                             out = instruction.operand_a - 8'h66;
                             flags_o.C = (8'h66 > instruction.operand_a);
                         end
                         default: begin
-                            out = 8'bxxxx_xxxx;
+                            out = 8'hFF;
                             flags_o.C = 1'bx;
                         end
                     endcase
                 end else begin
                     case ({
-                        (flags_i.C || (instruction.operand_a[7:4] > 4'h9)),
+                        (flags_i.C || (instruction.operand_a > 8'h99)),
                         (flags_i.H || (instruction.operand_a[3:0] > 4'h9))
                     })
-                        00: begin
+                        2'b00: begin
                             out = instruction.operand_a;
                             flags_o.C = 1'b0;
                         end
-                        01: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h006;
-                        10: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h060;
-                        11: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h066;
+                        2'b01: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h06;
+                        2'b10: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h60;
+                        2'b11: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h66;
                         default: begin
-                            out = 8'bxxxx_xxxx;
+                            out = 8'hFF;
                             flags_o.C = 1'bx;
                         end
                     endcase
@@ -236,4 +242,6 @@ module gb_cpu_alu (
         else flags_o.Z = (out == 8'h00);
     end : setZeroFlag
 
+    /* verilator lint_off WIDTHEXPAND */
+    /* verilator lint_off MULTIDRIVEN */
 endmodule : gb_cpu_alu

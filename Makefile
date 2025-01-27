@@ -72,7 +72,7 @@ endif
 endif
 ifdef VERILATOR
 	# Verilate the design
-	verilator -CFLAGS -fcoroutines --binary --timing --trace-structs --trace-params --trace-fst --top-module $(TOP) $(RTL_FILES) $(TESTBENCH)
+	verilator -CFLAGS -fcoroutines --binary --timing --no-trace-top --trace-structs --trace-params --trace-fst --assert --top-module $(TOP) $(RTL_FILES) $(TESTBENCH)
 	# Dump the simulation log
 	$(VERILATOR_DIR)/V$(TOP) > $(TEST_LOG)
 	cat $(TEST_LOG)
