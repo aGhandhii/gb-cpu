@@ -92,13 +92,13 @@ module gb_cpu_alu (
                 flags_o.C = 1'b0;
             end
             CCF: begin
-                out = 8'bxxxx_xxxx;
+                out = instruction.operand_a;
                 flags_o.N = 1'b0;
                 flags_o.H = 1'b0;
                 flags_o.C = ~flags_i.C;
             end
             SCF: begin
-                out = 8'bxxxx_xxxx;
+                out = instruction.operand_a;
                 flags_o.N = 1'b0;
                 flags_o.H = 1'b0;
                 flags_o.C = 1'b1;
@@ -175,31 +175,31 @@ module gb_cpu_alu (
                 flags_o.C = instruction.operand_a[0];  // Carry is low-bit
             end
             RL, RLA: begin
-                out = {instruction.operand_a[6:0], instruction.operand_a[7]};
-                flags_o.N = 1'b0;
-                flags_o.H = 1'b0;
-                flags_o.C = instruction.operand_a[7];
-            end
-            RLC, RLCA: begin
                 out = {instruction.operand_a[6:0], flags_i.C};
                 flags_o.N = 1'b0;
                 flags_o.H = 1'b0;
                 flags_o.C = instruction.operand_a[7];
             end
-            RR, RRA: begin
-                out = {1'b0, instruction.operand_a[7:1]};
+            RLC, RLCA: begin
+                out = {instruction.operand_a[6:0], instruction.operand_a[7]};
                 flags_o.N = 1'b0;
                 flags_o.H = 1'b0;
-                flags_o.C = instruction.operand_a[0];  // Carry is low-bit
+                flags_o.C = instruction.operand_a[7];
             end
-            RRC, RRCA: begin
+            RR, RRA: begin
                 out = {flags_i.C, instruction.operand_a[7:1]};
                 flags_o.N = 1'b0;
                 flags_o.H = 1'b0;
                 flags_o.C = instruction.operand_a[0];  // Carry is low-bit
             end
+            RRC, RRCA: begin
+                out = {instruction.operand_a[0], instruction.operand_a[7:1]};
+                flags_o.N = 1'b0;
+                flags_o.H = 1'b0;
+                flags_o.C = instruction.operand_a[0];  // Carry is low-bit
+            end
             BIT: begin
-                out = 8'bxxxx_xxxx;
+                out = instruction.operand_a;
                 flags_o.N = 1'b0;
                 flags_o.H = 1'b1;
                 flags_o.C = flags_i.C;
@@ -235,7 +235,8 @@ module gb_cpu_alu (
 
     always_comb begin : setZeroFlag
         if (instruction.opcode == BIT) flags_o.Z = ~instruction.operand_a[instruction.operand_b[2:0]];
-        else if (instruction.opcode == ALU_NOP || instruction.opcode == SET || instruction.opcode == RES)
+        else if (instruction.opcode == CP) flags_o.Z = (instruction.operand_a == instruction.operand_b);
+        else if (instruction.opcode == ALU_NOP || instruction.opcode == SET || instruction.opcode == RES || instruction.opcode == CCF || instruction.opcode == SCF || instruction.opcode == CPL)
             flags_o.Z = flags_i.Z;
         else if (instruction.opcode == RRCA || instruction.opcode == RLCA || instruction.opcode == RRA || instruction.opcode == RLA)
             flags_o.Z = 1'b0;

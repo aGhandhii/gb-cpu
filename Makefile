@@ -2,7 +2,7 @@
 WINDOWS         =
 WAVES			=
 ICARUS          =
-VERILATOR       =
+VERILATOR       = 1
 
 # Setup
 PROJ            = Project
