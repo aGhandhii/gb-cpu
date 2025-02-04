@@ -13,11 +13,18 @@ Inputs:
 Outputs:
     decoder_control_signals
 
+Notes:
+    - longest possible instruction takes 6 M-cycles
+    - we need to schedule 6 M-cycles worth of controls for each instruction
+    - use macros?
+    - for conditional operations, assume condition is true
+        - have external handling for false condition case
+
 */
 module gb_cpu_decoder (
     input logic [7:0] opcode,
     decoder_state_t decoder_state,
-    control_signals_t control_signals
+    control_signals_t [5:0] schedule
 );
 
     always_comb begin : decoderCombinationalLogic
