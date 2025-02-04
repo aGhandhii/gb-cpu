@@ -150,7 +150,7 @@ package gb_cpu_common_pkg;
         logic                alu_inc_dec;             // Pass 1 as operand_b
         regfile_r8_t         alu_destination;
         logic                alu_wren;
-        logic                bit_cmd;
+        logic                bit_cmd;  // pass 3-bit 'bit address' from opcode to alu (bit, set, res)
 
         // There are a few additional possible 'miscellaneous operations'
         // (source)
@@ -162,8 +162,19 @@ package gb_cpu_common_pkg;
         logic enable_interrupts;
         logic disable_interrupts;
         logic rst_cmd;
-        logic cc_check;            // check condition code
-        // TODO: enable interrupts with a delay?
+        logic cc_check; // check condition code
+        // NOTE:
+        //  - for condition codes, if the condition is NOT met, we ALWAYS
+        //    proceed with the following instruction:
+        //      addrBus: PC
+        //      dataBus: write to IR (load next instruction)
+        //      IDU:     increment PC (PC <- PC + 1)
+        //      ALU:     NoOp
+        //      Misc:    NoOp
+        // - this handling can be done at the top level
+
+        // TODO: the ei (enable interrupts) command flips IME after the
+        //       following command is complete (next 2 writes to IR?)
 
         // We also want to signal if an instruction is 0xCB-prefixed
         // - this signal can be flopped so the next address read will be

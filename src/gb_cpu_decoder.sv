@@ -7,11 +7,11 @@ Based on the Pan Docs 'CPU Instruction Set' page
 https://gbdev.io/pandocs/CPU_Instruction_Set.html
 
 Inputs:
-    decoder_state   - Current decoder state
-    opcode          - 8-bit instruction
+    opcode      - 8-bit instruction from IR
+    cb_prefix   - If instruction is 0xCB prefixed
 
 Outputs:
-    decoder_control_signals
+    schedule    - M-cycle schedule for decoded instruction
 
 Notes:
     - longest possible instruction takes 6 M-cycles
@@ -22,16 +22,16 @@ Notes:
 
 */
 module gb_cpu_decoder (
-    input logic [7:0] opcode,
-    decoder_state_t decoder_state,
-    control_signals_t [5:0] schedule
+    input logic [7:0]   opcode,
+    input logic         cb_prefix,
+    output schedule_t   schedule
 );
 
     always_comb begin : decoderCombinationalLogic
 
-        case (decoder_state)
+        case (cb_prefix)
 
-            READ_OPCODE: begin
+            1'b0: begin
                 case (opcode) inside
 
                     8'b00_000000: $display("No Op");
@@ -58,7 +58,7 @@ module gb_cpu_decoder (
                     8'b00_010000: $display("stop");  // has a special condition
 
                     8'b01_??????: begin
-                        if (opcodeByte0 == 8'b01_110110) $display("halt");
+                        if (opcode == 8'b01_110110) $display("halt");
                         else $display("ld r8, r8");
                     end
 
@@ -124,7 +124,7 @@ module gb_cpu_decoder (
                 endcase
             end
 
-            READ_CB_OPCODE: begin
+            1'b1: begin
                 case (opcode) inside
 
                     8'b00_000_???: $display("rlc r8");
@@ -145,10 +145,7 @@ module gb_cpu_decoder (
                 endcase
             end
 
-            READ_R8:        $display("reading 8-bit immediate");
-            READ_R16_BYTE0: $display("reading first byte of 16-bit immediate");
-            READ_R16_BYTE1: $display("reading second byte of 16-bit immediate");
-            default:        $display("unknown decoder state!");
+            default: $display("unknown decoder state!");
 
         endcase
 
