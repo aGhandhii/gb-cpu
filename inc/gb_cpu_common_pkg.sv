@@ -76,7 +76,7 @@ package gb_cpu_common_pkg;
     // REGISTER FILE {{{
 
     // IE is memory-mapped to 0xFFFF but is located within the core
-    // IF stores the current instruction
+    // IR stores the current instruction
     typedef enum logic [3:0] {
         REG_A,
         REG_F,
@@ -86,6 +86,8 @@ package gb_cpu_common_pkg;
         REG_E,
         REG_H,
         REG_L,
+        REG_IR,
+        REG_IE,
         REG_SP_L,
         REG_SP_H,
         REG_PC_L,
@@ -139,8 +141,8 @@ package gb_cpu_common_pkg;
 
         idu_opcode_t  idu_opcode;
         regfile_r16_t idu_operand;
-        logic         idu_wren;
         regfile_r16_t idu_destination;
+        logic         idu_wren;
 
         alu_opcode_t         alu_opcode;
         alu_operand_source_t alu_operand_a_source;
@@ -150,19 +152,12 @@ package gb_cpu_common_pkg;
         logic                alu_inc_dec;             // Pass 1 as operand_b
         regfile_r8_t         alu_destination;
         logic                alu_wren;
-        logic                bit_cmd;  // pass 3-bit 'bit address' from opcode to alu (bit, set, res)
 
         // There are a few additional possible 'miscellaneous operations'
-        // (source)
-        // These include:
-        //  - set/reset IME
-        //  - write contents of 16-bit TMP register to a 16-bit register
-        //  - write the 'restart' address to the Program Counter
-        //  - check a condition code
-        logic enable_interrupts;
-        logic disable_interrupts;
-        logic rst_cmd;
-        logic cc_check; // check condition code
+        logic enable_interrupts;  // set IME (delays 1 cycle)
+        logic disable_interrupts;  // reset IME
+        logic rst_cmd;  // set PC to restart address
+        logic cc_check;  // check condition code
         // NOTE:
         //  - for condition codes, if the condition is NOT met, we ALWAYS
         //    proceed with the following instruction:
@@ -172,14 +167,6 @@ package gb_cpu_common_pkg;
         //      ALU:     NoOp
         //      Misc:    NoOp
         // - this handling can be done at the top level
-
-        // TODO: the ei (enable interrupts) command flips IME after the
-        //       following command is complete (next 2 writes to IR?)
-
-        // We also want to signal if an instruction is 0xCB-prefixed
-        // - this signal can be flopped so the next address read will be
-        //   decoded into the correct instruction
-        logic cb_prefix;
 
     } control_signals_t;
 
@@ -192,12 +179,20 @@ package gb_cpu_common_pkg;
     // the value of the IR register is at a given moment
     typedef struct {
         control_signals_t [5:0] instruction_controls;
+        // Duration of the instruction
         logic [2:0]             m_cycles;
+        // pass 3-bit 'bit address' from opcode to alu (bit, set, res)
+        logic                   bit_cmd;
+        // We also want to signal if an instruction is 0xCB-prefixed
+        // - this signal can be flopped so the next address read will be
+        //   decoded into the correct instruction, it needs to last for the
+        //   entirety of the following instruction
+        logic                   cb_prefix_next;
     } schedule_t;
 
     // }}}
 
-    // REPURPOSE IN TOP LEVEL - USED TO PARSE INSTRUCTION BITS
+    // REPURPOSE IN INSTRUCTION PARSING
 
     typedef enum logic [2:0] {
         r8_b       = 3'o0,
