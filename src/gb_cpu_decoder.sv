@@ -22,9 +22,9 @@ Notes:
 
 */
 module gb_cpu_decoder (
-    input logic [7:0]   opcode,
-    input logic         cb_prefix,
-    output schedule_t   schedule
+    input  logic      [7:0] opcode,
+    input  logic            cb_prefix,
+    output schedule_t       schedule
 );
 
     always_comb begin : decoderCombinationalLogic
