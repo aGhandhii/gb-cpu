@@ -6,7 +6,6 @@ Synchronous logic to handle instruction incrementation on M-cycles
 Also handles event-driven cases:
     - condition code not met
     - CB prefixing
-    - enable interrupt delay
 
 Inputs:
     clk                 - Machine (M) Clock
@@ -19,7 +18,6 @@ Inputs:
 Outputs:
     control             - control signals for the next M-cycle
     cb_prefix_o         - if next instruction will be 0xCB prefixed
-    enable_interrupts   - if IME should be set in the next cycle
 */
 module gb_cpu_scheduler (
     input  logic                   clk,
@@ -30,14 +28,10 @@ module gb_cpu_scheduler (
     input  logic                   cb_prefix_i,
     output control_signals_t       control_next,
     output logic             [2:0] next_m_cycle,
-    output logic                   cb_prefix_o,
-    output logic                   enable_interrupts
+    output logic                   cb_prefix_o
 );
 
     always_ff @(posedge clk) begin
-
-        // interrupt enable delay
-        enable_interrupts <= (schedule[schedule.m_cycles-curr_m_cycle].enable_interrupts) ? 1'b1 : 1'b0;
 
         // Next instruction scheduling
         if (reset | cond_not_met) begin
@@ -65,9 +59,9 @@ module gb_cpu_scheduler (
             control_next.rst_cmd                <= 1'b0;
             control_next.cc_check               <= 1'b0;
             // This is a single-cycle instruction
-            next_m_cycle                        <= 2'd1;
+            next_m_cycle                        <= 3'd0;
             cb_prefix_o                         <= 1'b0;
-        end else if (curr_m_cycle == 2'd1) begin
+        end else if (curr_m_cycle == 3'd0) begin
             // Load the next cycle count
             next_m_cycle <= schedule.m_cycles;
             // Load in the next instruction
@@ -76,9 +70,9 @@ module gb_cpu_scheduler (
             cb_prefix_o  <= schedule.cb_prefix_next ? 1'b1 : 1'b0;
         end else begin
             // Decrement the cycle count for the instruction
-            next_m_cycle <= curr_m_cycle - 2'd1;
+            next_m_cycle <= curr_m_cycle - 3'd1;
             // Load in the next instruction
-            control_next <= schedule.instruction_controls[schedule.m_cycles-(curr_m_cycle-2'd1)];
+            control_next <= schedule.instruction_controls[schedule.m_cycles-(curr_m_cycle-3'd1)];
             cb_prefix_o  <= cb_prefix_i;
         end
 

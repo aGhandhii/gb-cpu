@@ -124,7 +124,7 @@ package gb_cpu_common_pkg;
         ADDR_BUS_ZERO
     } addr_bus_source_t;
 
-    typedef struct {
+    typedef struct packed {
 
         // Address bus can drive one of the following:
         //  - a 16-bit register value

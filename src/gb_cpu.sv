@@ -20,4 +20,7 @@ module gb_cpu (
     output logic        drive_data_bus
 );
 
+
+    // We need to internally flop enable_interrupts to delay a cycle
+
 endmodule : gb_cpu
