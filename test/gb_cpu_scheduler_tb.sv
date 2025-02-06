@@ -7,7 +7,6 @@ module gb_cpu_scheduler_tb ();
     schedule_t              schedule;
     logic             [2:0] curr_m_cycle;
     logic                   cond_not_met;
-    logic                   cb_prefix_i;
     control_signals_t       control_next;
     logic             [2:0] next_m_cycle;
     logic                   cb_prefix_o;
@@ -105,10 +104,14 @@ module gb_cpu_scheduler_tb ();
         $dumpfile("gb_cpu_scheduler_tb.fst");
         $dumpvars();
 
-        schedule.m_cycles = 3'd2;  // means 3 cycles
+        schedule.m_cycles = 3'd2;
         buildSchedule();
         sysReset();
-        repeat (5) @(posedge clk);
+        @(posedge clk);
+        schedule.cb_prefix_next = 1'b1;
+        repeat (3) @(posedge clk);
+        schedule.cb_prefix_next = 1'b0;
+        repeat (6) @(posedge clk);
 
         $finish();
     end

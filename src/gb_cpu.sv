@@ -20,7 +20,12 @@ module gb_cpu (
     output logic        drive_data_bus
 );
 
+    // Current controls for given m-cycle as sent by the scheduler
+    control_signals_t curr_controls;
 
     // We need to internally flop enable_interrupts to delay a cycle
+    logic enable_interrupts_delayed;
+
+    always_ff @(posedge clk) enable_interrupts_delayed <= curr_controls.enable_interrupts;
 
 endmodule : gb_cpu

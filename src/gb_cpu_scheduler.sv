@@ -13,7 +13,6 @@ Inputs:
     schedule            - the instruction schedule for the current opcode
     curr_m_cycle        - M cycle counter for current instruction
     cond_not_met        - if a condition check was executed but failed
-    cb_prefix_i         - if the current instruction is 0xCB prefixed
 
 Outputs:
     control             - control signals for the next M-cycle
@@ -25,7 +24,6 @@ module gb_cpu_scheduler (
     input  schedule_t              schedule,
     input  logic             [2:0] curr_m_cycle,
     input  logic                   cond_not_met,
-    input  logic                   cb_prefix_i,
     output control_signals_t       control_next,
     output logic             [2:0] next_m_cycle,
     output logic                   cb_prefix_o
@@ -73,7 +71,7 @@ module gb_cpu_scheduler (
             next_m_cycle <= curr_m_cycle - 3'd1;
             // Load in the next instruction
             control_next <= schedule.instruction_controls[schedule.m_cycles-(curr_m_cycle-3'd1)];
-            cb_prefix_o  <= cb_prefix_i;
+            cb_prefix_o  <= cb_prefix_o;
         end
 
     end
