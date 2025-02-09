@@ -14,9 +14,20 @@ module gb_cpu_decoder_tb ();
         $dumpfile("gb_cpu_decoder_tb.fst");
         $dumpvars();
 
-        opcode    = 8'b10_000_110;
         cb_prefix = 1'b0;
-        #10;
+
+
+        // xor a e
+        opcode    = 8'b10_101_011;
+        #1;
+
+        // dec d
+        opcode = 8'b00_010_101;
+        #1;
+
+        // inc [HL]
+        opcode = 8'b00_110_100;
+        #1;
 
         $finish();
     end

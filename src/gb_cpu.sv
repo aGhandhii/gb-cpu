@@ -31,5 +31,11 @@ module gb_cpu (
     // NOTE: for 'INC/DEC' operations, pass ALU operand b as operand a, and 8'd1 as operand_b
 
     // alu/idu results might get written on the negedge of the clock
+    //   - an exception should be the IR register, which can only be updated
+    //     at the posedge of the clock
+    //   - this avoids race conditions so PC can be updated and give memory
+    //     time to resolve the next value
+    //   - make sure this is a viable system - things might change when I
+    //     better understand how memory works
 
 endmodule : gb_cpu

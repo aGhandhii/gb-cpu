@@ -84,11 +84,19 @@ package gb_cpu_decoder_pkg;
         return schedule;
     endfunction : emptySchedule
 
+
+    // 8-BIT LOAD INSTRUCTIONS {{{
+
+    // }}}
+
+    // 16-BIT LOAD INSTRUCTIONS {{{
+
+    // }}}
+
     // 8-BIT ARITHMETIC AND LOGICAL INSTRUCTIONS {{{
 
     function static schedule_t arithmetic8Bit(alu_opcode_t alu_opcode, opcode_r8_t r8 = opcode_r8_t'(3'bxxx),
-                                              logic immediate_op = 1'b0, logic writeResult = 1'b1, logic incDec = 1'b0,
-                                              logic incDecMem = 1'b0);
+                                              logic immediate_op = 1'b0, logic writeResult = 1'b1, logic incDec = 1'b0);
 
         schedule_t schedule, blankSchedule;
         regfile_r8_t operand_b;
@@ -98,7 +106,7 @@ package gb_cpu_decoder_pkg;
         blankSchedule           = emptySchedule();  // sim gets mad when a variable and function share a name
         operand_b               = opcodeR8Decode(r8);
 
-        if (incDecMem) begin
+        if (incDec && (r8 == R8_HL_ADDR)) begin
             // Three-cycle memory inc/dec operation (indirect HL)
             schedule.m_cycles                                       = 3'd2;
             // Cycle 1 - get value at address HL
@@ -321,5 +329,12 @@ package gb_cpu_decoder_pkg;
 
     // }}}
 
+    // 16-BIT ARITHMETIC INSTRUCTIONS {{{
+
+    // }}}
+
+    // ROTATE, SHIFT, AND BIT OPERATION INSTRUCTIONS {{{
+
+    // }}}
 
 endpackage : gb_cpu_decoder_pkg

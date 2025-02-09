@@ -42,17 +42,19 @@ module gb_cpu_decoder (
                 //8'b00_??0011: $display("inc r16");
                 //8'b00_??1011: $display("dec r16");
                 //8'b00_??1001: $display("add hl, r16");
-                //8'b00_???100: $display("inc r8");
-                //8'b00_???101: $display("dec r8");
+                8'b00_???_100:
+                schedule = arithmetic8Bit(.alu_opcode(INC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // inc r8
+                8'b00_???_101:
+                schedule = arithmetic8Bit(.alu_opcode(DEC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // dec r8
                 //8'b00_???110: $display("ld  r8 imm8");
                 //8'b00_000111: $display("rlca");
                 //8'b00_001111: $display("rrca");
                 //8'b00_010111: $display("rla");
                 //8'b00_011111: $display("rra");
-                8'b00_100111: schedule = arithmetic8Bit(.alu_opcode(DAA), writeResult(1'b0));  // daa
-                8'b00_101111: schedule = arithmetic8Bit(.alu_opcode(CPL), writeResult(1'b0));  // cpl
-                8'b00_110111: schedule = arithmetic8Bit(.alu_opcode(SCF), writeResult(1'b0));  // scf
-                8'b00_111111: schedule = arithmetic8Bit(.alu_opcode(CCF), writeResult(1'b0));  // ccf
+                8'b00_100111: schedule = arithmetic8Bit(.alu_opcode(DAA), .writeResult(1'b0));  // daa
+                8'b00_101111: schedule = arithmetic8Bit(.alu_opcode(CPL), .writeResult(1'b0));  // cpl
+                8'b00_110111: schedule = arithmetic8Bit(.alu_opcode(SCF), .writeResult(1'b0));  // scf
+                8'b00_111111: schedule = arithmetic8Bit(.alu_opcode(CCF), .writeResult(1'b0));  // ccf
                 //8'b00_011000: $display("jr  imm8");
                 //8'b00_1??000: $display("jr  cond, imm8");
                 //8'b00_010000: $display("stop");
