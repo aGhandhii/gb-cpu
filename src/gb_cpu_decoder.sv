@@ -109,7 +109,7 @@ module gb_cpu_decoder (
                 //8'b111_1000_0: $display("ldh a, [imm8]");
                 //8'b111_1101_0: $display("ld  a, [imm16]");
 
-                //8'b11_101000: $display("add sp, imm8");
+                8'b11_101000: schedule = arithmetic16Bit(.addSP(1'b1));  // add sp, imm8
                 //8'b11_111000: $display("ld  hl, sp + imm8");
                 //8'b11_111001: $display("ld  sp, hl");
 

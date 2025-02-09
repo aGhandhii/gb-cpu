@@ -360,7 +360,107 @@ package gb_cpu_decoder_pkg;
         rr_hi                   = getRegisterHigh(rr);
 
         if (addSP) begin
-            // Relative add to Stack Pointer
+            // Relative add to Stack Pointer - 4 M cycles
+            schedule.m_cycles                                       = 3'd3;
+            // Cycle 1 - obtain signed immediate from memory
+            schedule.instruction_controls[0].addr_bus_source        = ADDR_BUS_REG16;
+            schedule.instruction_controls[0].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[0].addr_bus_source_r16    = REG_PC;
+            schedule.instruction_controls[0].data_bus_i_destination = REG_TMP_L;
+            schedule.instruction_controls[0].data_bus_o_source      = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[0].drive_data_bus         = 1'b0;
+            schedule.instruction_controls[0].idu_opcode             = IDU_INC;
+            schedule.instruction_controls[0].idu_operand            = REG_SP;
+            schedule.instruction_controls[0].idu_destination        = REG_SP;
+            schedule.instruction_controls[0].idu_wren               = 1'b1;
+            schedule.instruction_controls[0].alu_opcode             = ALU_NOP;
+            schedule.instruction_controls[0].alu_operand_a_register = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[0].alu_operand_b_register = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[0].alu_inc_dec            = 1'b0;
+            schedule.instruction_controls[0].alu_destination        = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[0].alu_wren               = 1'b0;
+            schedule.instruction_controls[0].enable_interrupts      = 1'b0;
+            schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[0].rst_cmd                = 1'b0;
+            schedule.instruction_controls[0].cc_check               = 1'b0;
+            schedule.instruction_controls[0].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[0].set_adj                = 1'b0;
+            schedule.instruction_controls[0].add_adj                = 1'b0;
+            // Cycle 2 - unsigned add of immediate and lsb of SP
+            schedule.instruction_controls[1].addr_bus_source        = ADDR_BUS_ZERO;
+            schedule.instruction_controls[1].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[1].addr_bus_source_r16    = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[1].data_bus_i_destination = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[1].data_bus_o_source      = REG_TMP_L;
+            schedule.instruction_controls[1].drive_data_bus         = 1'b1;
+            schedule.instruction_controls[1].idu_opcode             = IDU_NOP;
+            schedule.instruction_controls[1].idu_operand            = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[1].idu_destination        = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[1].idu_wren               = 1'b0;
+            schedule.instruction_controls[1].alu_opcode             = ADD;
+            schedule.instruction_controls[1].alu_operand_a_register = REG_SP_L;
+            schedule.instruction_controls[1].alu_operand_b_register = REG_TMP_L;
+            schedule.instruction_controls[1].alu_inc_dec            = 1'b0;
+            schedule.instruction_controls[1].alu_destination        = REG_TMP_L;
+            schedule.instruction_controls[1].alu_wren               = 1'b1;
+            schedule.instruction_controls[1].enable_interrupts      = 1'b0;
+            schedule.instruction_controls[1].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[1].rst_cmd                = 1'b0;
+            schedule.instruction_controls[1].cc_check               = 1'b0;
+            schedule.instruction_controls[1].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[1].set_adj                = 1'b1;
+            schedule.instruction_controls[1].add_adj                = 1'b0;
+            // Cycle 3 - adc with sign extension of immediate and msb of SP
+            schedule.instruction_controls[2].addr_bus_source        = ADDR_BUS_ZERO;
+            schedule.instruction_controls[2].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[2].addr_bus_source_r16    = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[2].data_bus_i_destination = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[2].data_bus_o_source      = REG_TMP_H;
+            schedule.instruction_controls[2].drive_data_bus         = 1'b1;
+            schedule.instruction_controls[2].idu_opcode             = IDU_NOP;
+            schedule.instruction_controls[2].idu_operand            = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[2].idu_destination        = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[2].idu_wren               = 1'b0;
+            schedule.instruction_controls[2].alu_opcode             = ADC;
+            schedule.instruction_controls[2].alu_operand_a_register = REG_SP_H;
+            schedule.instruction_controls[2].alu_operand_b_register = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[2].alu_inc_dec            = 1'b0;
+            schedule.instruction_controls[2].alu_destination        = REG_TMP_H;
+            schedule.instruction_controls[2].alu_wren               = 1'b1;
+            schedule.instruction_controls[2].enable_interrupts      = 1'b0;
+            schedule.instruction_controls[2].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[2].rst_cmd                = 1'b0;
+            schedule.instruction_controls[2].cc_check               = 1'b0;
+            schedule.instruction_controls[2].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[2].set_adj                = 1'b0;
+            schedule.instruction_controls[2].add_adj                = 1'b1;
+            // Cycle 4 - request next opcode and overwrite SP
+            schedule.instruction_controls[3].addr_bus_source        = ADDR_BUS_REG16;
+            schedule.instruction_controls[3].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[3].addr_bus_source_r16    = REG_PC;
+            schedule.instruction_controls[3].data_bus_i_destination = REG_IR;
+            schedule.instruction_controls[3].data_bus_o_source      = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[3].drive_data_bus         = 1'b0;
+            schedule.instruction_controls[3].idu_opcode             = IDU_INC;
+            schedule.instruction_controls[3].idu_operand            = REG_PC;
+            schedule.instruction_controls[3].idu_destination        = REG_PC;
+            schedule.instruction_controls[3].idu_wren               = 1'b1;
+            schedule.instruction_controls[3].alu_opcode             = ALU_NOP;
+            schedule.instruction_controls[3].alu_operand_a_register = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[3].alu_operand_b_register = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[3].alu_inc_dec            = 1'b0;
+            schedule.instruction_controls[3].alu_destination        = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[3].alu_wren               = 1'b0;
+            schedule.instruction_controls[3].enable_interrupts      = 1'b0;
+            schedule.instruction_controls[3].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[3].rst_cmd                = 1'b0;
+            schedule.instruction_controls[3].cc_check               = 1'b0;
+            schedule.instruction_controls[3].overwrite_sp           = 1'b1;
+            schedule.instruction_controls[3].set_adj                = 1'b0;
+            schedule.instruction_controls[3].add_adj                = 1'b0;
+            // Fill remaining instruction slots
+            schedule.instruction_controls[4]                        = blankSchedule.instruction_controls[4];
+            schedule.instruction_controls[5]                        = blankSchedule.instruction_controls[5];
         end else if (addHL) begin
             // ADD HL, r16, 2 M cycles
             schedule.m_cycles                                       = 3'd1;

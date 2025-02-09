@@ -34,11 +34,15 @@ module gb_cpu_decoder_tb ();
         //opcode = 8'b00_00_1011;
         //#1;
 
-        // add HL, BC
-        opcode = 8'b00_00_1001;
-        #1;
-        // add HL, DE
-        opcode = 8'b00_01_1001;
+        //// add HL, BC
+        //opcode = 8'b00_00_1001;
+        //#1;
+        //// add HL, DE
+        //opcode = 8'b00_01_1001;
+        //#1;
+
+        // add sp, imm8
+        opcode = 8'b11_101000;
         #1;
 
         $finish();
