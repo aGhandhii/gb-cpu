@@ -28,4 +28,6 @@ module gb_cpu (
 
     always_ff @(posedge clk) enable_interrupts_delayed <= curr_controls.enable_interrupts;
 
+    // NOTE: for 'INC/DEC' operations, pass ALU operand b as operand a, and 8'd1 as operand_b
+
 endmodule : gb_cpu

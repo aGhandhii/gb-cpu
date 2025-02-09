@@ -106,23 +106,55 @@ package gb_cpu_common_pkg;
         REG_TMP
     } regfile_r16_t;
 
+    // These are decoded from the opcode, and specify a register
+    typedef enum logic [2:0] {
+        R8_B       = 3'o0,
+        R8_C       = 3'o1,
+        R8_D       = 3'o2,
+        R8_E       = 3'o3,
+        R8_H       = 3'o4,
+        R8_L       = 3'o5,
+        R8_HL_ADDR = 3'o6,
+        R8_A       = 3'o7
+    } opcode_r8_t;
+
+    typedef enum logic [1:0] {
+        R16_BC = 2'b00,
+        R16_DE = 2'b01,
+        R16_HL = 2'b10,
+        R16_SP = 2'b11
+    } opcode_r16_t;
+
+    typedef enum logic [1:0] {
+        R16STK_BC = 2'b00,
+        R16STK_DE = 2'b01,
+        R16STK_HL = 2'b10,
+        R16STK_AF = 2'b11
+    } opcode_r16stk_t;
+
+    typedef enum logic [1:0] {
+        R16MEM_BC  = 2'b00,
+        R16MEM_DE  = 2'b01,
+        R16MEM_HLI = 2'b10,
+        R16MEM_HLD = 2'b11
+    } opcode_r16mem_t;
+
     // }}}
 
     // DECODER AND SCHEDULING {{{
-
-    typedef enum logic [2:0] {
-        READ_OPCODE,
-        READ_CB_OPCODE,
-        READ_R8,
-        READ_R16_BYTE0,
-        READ_R16_BYTE1
-    } decoder_state_t;
 
     typedef enum logic [1:0] {
         ADDR_BUS_REG16,
         ADDR_BUS_REG8,
         ADDR_BUS_ZERO
     } addr_bus_source_t;
+
+    typedef enum logic [1:0] {
+        COND_NZ = 2'b00,
+        COND_Z  = 2'b01,
+        COND_NC = 2'b10,
+        COND_C  = 2'b11
+    } condition_code_t;
 
     typedef struct packed {
 
@@ -154,19 +186,10 @@ package gb_cpu_common_pkg;
         logic                alu_wren;
 
         // There are a few additional possible 'miscellaneous operations'
-        logic enable_interrupts;  // set IME (delays 1 cycle)
+        logic enable_interrupts;   // set IME (delayed by 1 cycle)
         logic disable_interrupts;  // reset IME
-        logic rst_cmd;  // set PC to restart address
-        logic cc_check;  // check condition code
-        // NOTE:
-        //  - for condition codes, if the condition is NOT met, we ALWAYS
-        //    proceed with the following instruction:
-        //      addrBus: PC
-        //      dataBus: write to IR (load next instruction)
-        //      IDU:     increment PC (PC <- PC + 1)
-        //      ALU:     NoOp
-        //      Misc:    NoOp
-        // - this handling can be done at the top level
+        logic rst_cmd;             // set PC to restart address
+        logic cc_check;            // check condition code
 
     } control_signals_t;
 
@@ -178,59 +201,20 @@ package gb_cpu_common_pkg;
     // Setting new signals will be done with combinational logic for whatever
     // the value of the IR register is at a given moment
     typedef struct {
+
+        // Contains the schedule of controls
         control_signals_t [5:0] instruction_controls;
         // Duration of the instruction
         logic [2:0]             m_cycles;
         // pass 3-bit 'bit address' from opcode to alu (bit, set, res)
         logic                   bit_cmd;
-        // We also want to signal if an instruction is 0xCB-prefixed
-        // - this signal can be flopped so the next address read will be
-        //   decoded into the correct instruction, it needs to last for the
-        //   entirety of the following instruction
+        // If the following instruction is 0xCB-prefixed
         logic                   cb_prefix_next;
+        // If a condition check is requested, check this condition
+        condition_code_t        condition;
+
     } schedule_t;
 
     // }}}
-
-    // REPURPOSE IN INSTRUCTION PARSING
-
-    typedef enum logic [2:0] {
-        r8_b       = 3'o0,
-        r8_c       = 3'o1,
-        r8_d       = 3'o2,
-        r8_e       = 3'o3,
-        r8_h       = 3'o4,
-        r8_l       = 3'o5,
-        r8_hl_addr = 3'o6,
-        r8_a       = 3'o7
-    } opcode_r8_t;
-
-    typedef enum logic [1:0] {
-        r16_bc = 2'b00,
-        r16_de = 2'b01,
-        r16_hl = 2'b10,
-        r16_sp = 2'b11
-    } opcode_r16_t;
-
-    typedef enum logic [1:0] {
-        r16stk_bc = 2'b00,
-        r16stk_de = 2'b01,
-        r16stk_hl = 2'b10,
-        r16stk_af = 2'b11
-    } opcode_r16stk_t;
-
-    typedef enum logic [1:0] {
-        r16mem_bc  = 2'b00,
-        r16mem_de  = 2'b01,
-        r16mem_hli = 2'b10,
-        r16mem_hld = 2'b11
-    } opcode_r16mem_t;
-
-    typedef enum logic [1:0] {
-        cond_nz = 2'b00,
-        cond_z  = 2'b01,
-        cond_nc = 2'b10,
-        cond_c  = 2'b11
-    } opcode_cond_t;
 
 endpackage : gb_cpu_common_pkg
