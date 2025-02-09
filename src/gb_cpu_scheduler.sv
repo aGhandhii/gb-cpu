@@ -56,6 +56,9 @@ module gb_cpu_scheduler (
             control_next.disable_interrupts     <= 1'b0;
             control_next.rst_cmd                <= 1'b0;
             control_next.cc_check               <= 1'b0;
+            control_next.overwrite_sp           <= 1'b0;
+            control_next.set_adj                <= 1'b0;
+            control_next.add_adj                <= 1'b0;
             // This is a single-cycle instruction
             next_m_cycle                        <= 3'd0;
             cb_prefix_o                         <= 1'b0;

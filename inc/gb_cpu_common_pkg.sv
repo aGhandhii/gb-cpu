@@ -106,6 +106,34 @@ package gb_cpu_common_pkg;
         REG_TMP
     } regfile_r16_t;
 
+    // Return the 'low' byte of a 16-bit register
+    function automatic regfile_r8_t getRegisterLow(regfile_r16_t rr);
+        case (rr)
+            REG_AF:  return REG_F;
+            REG_BC:  return REG_C;
+            REG_DE:  return REG_E;
+            REG_HL:  return REG_L;
+            REG_SP:  return REG_SP_L;
+            REG_PC:  return REG_PC_L;
+            REG_TMP: return REG_TMP_L;
+            default: return REG_TMP_L;
+        endcase
+    endfunction : getRegisterLow
+
+    // Return the 'high' byte of a 16-bit register
+    function automatic regfile_r8_t getRegisterHigh(regfile_r16_t rr);
+        case (rr)
+            REG_AF:  return REG_A;
+            REG_BC:  return REG_B;
+            REG_DE:  return REG_D;
+            REG_HL:  return REG_H;
+            REG_SP:  return REG_SP_H;
+            REG_PC:  return REG_PC_H;
+            REG_TMP: return REG_TMP_H;
+            default: return REG_TMP_H;
+        endcase
+    endfunction : getRegisterHigh
+
     // These are decoded from the opcode, and specify a register
     typedef enum logic [2:0] {
         R8_B       = 3'o0,
@@ -190,6 +218,12 @@ package gb_cpu_common_pkg;
         logic disable_interrupts;  // reset IME
         logic rst_cmd;             // set PC to restart address
         logic cc_check;            // check condition code
+        logic overwrite_sp;        // write contents of temp register to SP
+        // These signals are needed for the following instructions:
+        //   - ld  HL, SP+e
+        //   - add SP, e
+        logic set_adj;             // set the signed arithmetic adjust value
+        logic add_adj;             // force the alu input to be adj, and do not set flags
 
     } control_signals_t;
 

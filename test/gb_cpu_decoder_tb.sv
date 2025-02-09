@@ -17,16 +17,28 @@ module gb_cpu_decoder_tb ();
         cb_prefix = 1'b0;
 
 
-        // xor a e
-        opcode    = 8'b10_101_011;
-        #1;
+        //// xor a e
+        //opcode    = 8'b10_101_011;
+        //#1;
+        //// dec d
+        //opcode = 8'b00_010_101;
+        //#1;
+        //// inc [HL]
+        //opcode = 8'b00_110_100;
+        //#1;
 
-        // dec d
-        opcode = 8'b00_010_101;
-        #1;
+        //// inc SP
+        //opcode = 8'b00_11_0011;
+        //#1;
+        //// dec BC
+        //opcode = 8'b00_00_1011;
+        //#1;
 
-        // inc [HL]
-        opcode = 8'b00_110_100;
+        // add HL, BC
+        opcode = 8'b00_00_1001;
+        #1;
+        // add HL, DE
+        opcode = 8'b00_01_1001;
         #1;
 
         $finish();

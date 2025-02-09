@@ -38,4 +38,8 @@ module gb_cpu (
     //   - make sure this is a viable system - things might change when I
     //     better understand how memory works
 
+    // for signed arithmetic (adj controls)
+    // set_adj - set REG_TMP_H to sign extension of REG_TMP_L
+    // add_adj - set alu operand_b to REG_TMP_H and do not write flags
+
 endmodule : gb_cpu

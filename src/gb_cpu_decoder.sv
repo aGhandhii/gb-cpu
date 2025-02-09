@@ -35,13 +35,14 @@ module gb_cpu_decoder (
             case (opcode) inside
 
                 //8'b00_000000: $display("No Op");
-                //8'b00_??0001: $display("ld  r16, imm16");
-                //8'b00_??0010: $display("ld  [r16mem], a");
-                //8'b00_??1010: $display("ld  a, [r16mem]");
+                //8'b00_??_0001: $display("ld  r16, imm16");
+                //8'b00_??_0010: $display("ld  [r16mem], a");
+                //8'b00_??_1010: $display("ld  a, [r16mem]");
                 //8'b00_001000: $display("ld  [imm16], sp");
-                //8'b00_??0011: $display("inc r16");
-                //8'b00_??1011: $display("dec r16");
-                //8'b00_??1001: $display("add hl, r16");
+                8'b00_??_0011: schedule = arithmetic16Bit(.incDec(1'b1), .r16(opcode_r16_t'(opcode[5:4])));  // inc r16
+                8'b00_??_1011: schedule = arithmetic16Bit(.incDec(1'b0), .r16(opcode_r16_t'(opcode[5:4])));  // dec r16
+                8'b00_??_1001:
+                schedule = arithmetic16Bit(.addHL(1'b1), .r16(opcode_r16_t'(opcode[5:4])));  // add hl, r16
                 8'b00_???_100:
                 schedule = arithmetic8Bit(.alu_opcode(INC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // inc r8
                 8'b00_???_101:
