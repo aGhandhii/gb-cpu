@@ -45,8 +45,6 @@ module gb_cpu_scheduler (
             control_next.idu_destination        <= REG_PC;
             control_next.idu_wren               <= 1'b1;
             control_next.alu_opcode             <= ALU_NOP;
-            control_next.alu_operand_a_source   <= alu_operand_source_t'(2'bxx);
-            control_next.alu_operand_b_source   <= alu_operand_source_t'(2'bxx);
             control_next.alu_operand_a_register <= regfile_r8_t'(4'hx);
             control_next.alu_operand_b_register <= regfile_r8_t'(4'hx);
             control_next.alu_inc_dec            <= 1'bx;

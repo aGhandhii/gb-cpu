@@ -49,13 +49,6 @@ package gb_cpu_common_pkg;
         logic C;
     } alu_flags_t;
 
-    // Used for control signals - specify alu input source
-    // the inputs can be from an 8-bit register or the data bus immediate
-    typedef enum logic [1:0] {
-        ALU_SRC_REG,
-        ALU_SRC_DATA
-    } alu_operand_source_t;
-
     // }}}
 
     // IDU {{{
@@ -204,14 +197,12 @@ package gb_cpu_common_pkg;
         regfile_r16_t idu_destination;
         logic         idu_wren;
 
-        alu_opcode_t         alu_opcode;
-        alu_operand_source_t alu_operand_a_source;
-        alu_operand_source_t alu_operand_b_source;
-        regfile_r8_t         alu_operand_a_register;
-        regfile_r8_t         alu_operand_b_register;
-        logic                alu_inc_dec;             // Pass 1 as operand_b
-        regfile_r8_t         alu_destination;
-        logic                alu_wren;
+        alu_opcode_t alu_opcode;
+        regfile_r8_t alu_operand_a_register;
+        regfile_r8_t alu_operand_b_register;
+        logic        alu_inc_dec;             // Pass 1 as operand_b
+        regfile_r8_t alu_destination;
+        logic        alu_wren;
 
         // There are a few additional possible 'miscellaneous operations'
         logic enable_interrupts;   // set IME (delayed by 1 cycle)
