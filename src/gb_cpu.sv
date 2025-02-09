@@ -30,4 +30,6 @@ module gb_cpu (
 
     // NOTE: for 'INC/DEC' operations, pass ALU operand b as operand a, and 8'd1 as operand_b
 
+    // alu/idu results might get written on the negedge of the clock
+
 endmodule : gb_cpu

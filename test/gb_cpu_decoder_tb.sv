@@ -14,7 +14,7 @@ module gb_cpu_decoder_tb ();
         $dumpfile("gb_cpu_decoder_tb.fst");
         $dumpvars();
 
-        opcode    = 8'b10_000_000;
+        opcode    = 8'b10_000_110;
         cb_prefix = 1'b0;
         #10;
 

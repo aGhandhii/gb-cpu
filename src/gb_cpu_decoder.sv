@@ -49,10 +49,10 @@ module gb_cpu_decoder (
                 //8'b00_001111: $display("rrca");
                 //8'b00_010111: $display("rla");
                 //8'b00_011111: $display("rra");
-                //8'b00_100111: $display("daa");
-                //8'b00_101111: $display("cpl");
-                //8'b00_110111: $display("scf");
-                //8'b00_111111: $display("ccf");
+                8'b00_100111: schedule = arithmetic8Bit(.alu_opcode(DAA), writeResult(1'b0));  // daa
+                8'b00_101111: schedule = arithmetic8Bit(.alu_opcode(CPL), writeResult(1'b0));  // cpl
+                8'b00_110111: schedule = arithmetic8Bit(.alu_opcode(SCF), writeResult(1'b0));  // scf
+                8'b00_111111: schedule = arithmetic8Bit(.alu_opcode(CCF), writeResult(1'b0));  // ccf
                 //8'b00_011000: $display("jr  imm8");
                 //8'b00_1??000: $display("jr  cond, imm8");
                 //8'b00_010000: $display("stop");
@@ -77,14 +77,14 @@ module gb_cpu_decoder (
                 8'b10_110_???: schedule = arithmetic8Bit(.alu_opcode(OR), .r8(opcode_r8_t'(opcode[2:0])));  // or  a, r8
                 8'b10_111_???: schedule = arithmetic8Bit(.alu_opcode(CP), .r8(opcode_r8_t'(opcode[2:0])));  // cp  a, r8
 
-                //8'b11_000_110: $display("add a, imm8");
-                //8'b11_001_110: $display("adc a, imm8");
-                //8'b11_010_110: $display("sub a, imm8");
-                //8'b11_011_110: $display("sbc a, imm8");
-                //8'b11_100_110: $display("and a, imm8");
-                //8'b11_101_110: $display("xor a, imm8");
-                //8'b11_110_110: $display("or  a, imm8");
-                //8'b11_111_110: $display("cp  a, imm8");
+                8'b11_000_110: schedule = arithmetic8Bit(.alu_opcode(ADD), .immediate_op(1'b1));  // add a, imm8
+                8'b11_001_110: schedule = arithmetic8Bit(.alu_opcode(ADC), .immediate_op(1'b1));  // adc a, imm8
+                8'b11_010_110: schedule = arithmetic8Bit(.alu_opcode(SUB), .immediate_op(1'b1));  // sub a, imm8
+                8'b11_011_110: schedule = arithmetic8Bit(.alu_opcode(SBC), .immediate_op(1'b1));  // sbc a, imm8
+                8'b11_100_110: schedule = arithmetic8Bit(.alu_opcode(AND), .immediate_op(1'b1));  // and a, imm8
+                8'b11_101_110: schedule = arithmetic8Bit(.alu_opcode(XOR), .immediate_op(1'b1));  // xor a, imm8
+                8'b11_110_110: schedule = arithmetic8Bit(.alu_opcode(OR), .immediate_op(1'b1));  // or  a, imm8
+                8'b11_111_110: schedule = arithmetic8Bit(.alu_opcode(CP), .immediate_op(1'b1));  // cp  a, imm8
 
                 //8'b11_0??000: $display("ret cond");
                 //8'b11_001001: $display("ret");
