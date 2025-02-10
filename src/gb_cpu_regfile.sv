@@ -45,22 +45,22 @@ Outputs:
     registers       - Register File for the CPU, all stored as 8-bit values
 */
 module gb_cpu_regfile (
- input logic clk,
- logic reset,
- regfile_r8_t alu_req,
- logic [7:0] alu_data,
- alu_flags_t alu_flags,
- logic alu_wren,
- logic alu_skip_flags,
- regfile_r16_t idu_req,
- logic [15:0] idu_data,
- logic idu_wren,
- regfile_r8_t data_bus_req,
- logic [7:0] data_bus_data,
- logic data_bus_wren,
- logic set_adj,
- logic overwrite_sp,
- output regfile_t registers
+    input logic clk,
+    logic reset,
+    regfile_r8_t alu_req,
+    logic [7:0] alu_data,
+    alu_flags_t alu_flags,
+    logic alu_wren,
+    logic alu_skip_flags,
+    regfile_r16_t idu_req,
+    logic [15:0] idu_data,
+    logic idu_wren,
+    regfile_r8_t data_bus_req,
+    logic [7:0] data_bus_data,
+    logic data_bus_wren,
+    logic set_adj,
+    logic overwrite_sp,
+    output regfile_t registers
 );
 
     // Split IDU requests into 8-bit register counterparts
@@ -74,8 +74,8 @@ module gb_cpu_regfile (
     // Reduce redundancy, takes ALU and IDU requests then returns the output
     // if either request will overwrite the existing value
     function automatic logic [7:0] setNegedgeValue(
-     logic [7:0] data_in, regfile_r8_t r8, logic [7:0] data_a, regfile_r8_t r8_a, logic wren_a, logic [7:0] data_b,
-     regfile_r8_t r8_b, logic wren_b, logic [7:0] data_c, regfile_r8_t r8_c, logic wren_c);
+        logic [7:0] data_in, regfile_r8_t r8, logic [7:0] data_a, regfile_r8_t r8_a, logic wren_a, logic [7:0] data_b,
+        regfile_r8_t r8_b, logic wren_b, logic [7:0] data_c, regfile_r8_t r8_c, logic wren_c);
         if (wren_a && (r8 == r8_a)) return data_a;
         else if (wren_b && (r8 == r8_b)) return data_b;
         else if (wren_c && (r8 == r8_c)) return data_c;

@@ -12,12 +12,12 @@ Outputs:
     drive_data_bus - write enable for data out
 */
 module gb_cpu (
- input  logic        clk,
- input  logic        reset,
- input  logic [ 7:0] data_i,
- output logic [15:0] addr_o,
- output logic [ 7:0] data_o,
- output logic        drive_data_bus
+    input  logic        clk,
+    input  logic        reset,
+    input  logic [ 7:0] data_i,
+    output logic [15:0] addr_o,
+    output logic [ 7:0] data_o,
+    output logic        drive_data_bus
 );
 
     // Interrupt Master Enable
