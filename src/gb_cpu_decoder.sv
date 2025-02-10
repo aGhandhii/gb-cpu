@@ -1,5 +1,4 @@
 import gb_cpu_common_pkg::*;
-import gb_cpu_decoder_pkg::*;
 /* Instruction Decoder for the gameboy CPU
 
 Reads in CISC Instructions and sets control signals accordingly
@@ -23,10 +22,12 @@ Notes:
 
 */
 module gb_cpu_decoder (
-    input  logic      [7:0] opcode,
-    input  logic            cb_prefix,
-    output schedule_t       schedule
+ input  logic      [7:0] opcode,
+ input  logic            cb_prefix,
+ output schedule_t       schedule
 );
+
+    import gb_cpu_decoder_pkg::*;
 
     always_comb begin : decoderCombinationalLogic
 

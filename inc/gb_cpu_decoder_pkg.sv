@@ -1,6 +1,14 @@
 import gb_cpu_common_pkg::*;
 
-// Decoder instruction scheduling
+/* Handle Scheduling for the Decoder Unit
+
+This would synthesize as a large LUT
+
+By design, we write the incoming data from the data bus if it is routed to the
+IR or TEMP registers - to avoid unwanted writes, we explicitly set the data bus
+destination to register F when it is not in use, as this will not be written
+
+*/
 package gb_cpu_decoder_pkg;
 
     // OPCODE ENCODING CONVERTERS {{{
@@ -141,7 +149,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].addr_bus_source        = ADDR_BUS_REG16;
             schedule.instruction_controls[1].addr_bus_source_r8     = regfile_r8_t'(4'hx);
             schedule.instruction_controls[1].addr_bus_source_r16    = REG_HL;
-            schedule.instruction_controls[1].data_bus_i_destination = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[1].data_bus_i_destination = REG_F;
             schedule.instruction_controls[1].data_bus_o_source      = REG_TMP_L;
             schedule.instruction_controls[1].drive_data_bus         = 1'b1;
             schedule.instruction_controls[1].idu_opcode             = IDU_NOP;
@@ -390,7 +398,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].addr_bus_source        = ADDR_BUS_ZERO;
             schedule.instruction_controls[1].addr_bus_source_r8     = regfile_r8_t'(4'hx);
             schedule.instruction_controls[1].addr_bus_source_r16    = regfile_r16_t'(3'bxxx);
-            schedule.instruction_controls[1].data_bus_i_destination = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[1].data_bus_i_destination = REG_F;
             schedule.instruction_controls[1].data_bus_o_source      = REG_TMP_L;
             schedule.instruction_controls[1].drive_data_bus         = 1'b1;
             schedule.instruction_controls[1].idu_opcode             = IDU_NOP;
@@ -414,7 +422,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[2].addr_bus_source        = ADDR_BUS_ZERO;
             schedule.instruction_controls[2].addr_bus_source_r8     = regfile_r8_t'(4'hx);
             schedule.instruction_controls[2].addr_bus_source_r16    = regfile_r16_t'(3'bxxx);
-            schedule.instruction_controls[2].data_bus_i_destination = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[2].data_bus_i_destination = REG_F;
             schedule.instruction_controls[2].data_bus_o_source      = REG_TMP_H;
             schedule.instruction_controls[2].drive_data_bus         = 1'b1;
             schedule.instruction_controls[2].idu_opcode             = IDU_NOP;
@@ -468,7 +476,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].addr_bus_source        = ADDR_BUS_ZERO;
             schedule.instruction_controls[0].addr_bus_source_r8     = regfile_r8_t'(4'hx);
             schedule.instruction_controls[0].addr_bus_source_r16    = regfile_r16_t'(3'bxxx);
-            schedule.instruction_controls[0].data_bus_i_destination = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[0].data_bus_i_destination = REG_F;
             schedule.instruction_controls[0].data_bus_o_source      = regfile_r8_t'(4'hx);
             schedule.instruction_controls[0].drive_data_bus         = 1'b0;
             schedule.instruction_controls[0].idu_opcode             = IDU_NOP;
@@ -524,7 +532,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].addr_bus_source        = ADDR_BUS_REG16;
             schedule.instruction_controls[0].addr_bus_source_r8     = regfile_r8_t'(4'hx);
             schedule.instruction_controls[0].addr_bus_source_r16    = rr;
-            schedule.instruction_controls[0].data_bus_i_destination = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[0].data_bus_i_destination = REG_F;
             schedule.instruction_controls[0].data_bus_o_source      = regfile_r8_t'(4'hx);
             schedule.instruction_controls[0].drive_data_bus         = 1'b0;
             schedule.instruction_controls[0].idu_opcode             = incDec ? IDU_INC : IDU_DEC;
@@ -582,6 +590,14 @@ package gb_cpu_decoder_pkg;
     // }}}
 
     // ROTATE, SHIFT, AND BIT OPERATION INSTRUCTIONS {{{
+
+    // }}}
+
+    // CONTROL FLOW INSTRUCTIONS {{{
+
+    // }}}
+
+    // MISCELLANEOUS INSTRUCTIONS {{{
 
     // }}}
 

@@ -68,6 +68,26 @@ package gb_cpu_common_pkg;
 
     // REGISTER FILE {{{
 
+    // Contains registers from the CPU regfile
+    typedef struct packed {
+        logic [7:0] a;
+        logic [7:0] f;
+        logic [7:0] b;
+        logic [7:0] c;
+        logic [7:0] d;
+        logic [7:0] e;
+        logic [7:0] h;
+        logic [7:0] l;
+        logic [7:0] ir;
+        logic [7:0] ie;
+        logic [7:0] sp_lo;
+        logic [7:0] sp_hi;
+        logic [7:0] pc_lo;
+        logic [7:0] pc_hi;
+        logic [7:0] tmp_lo;
+        logic [7:0] tmp_hi;
+    } regfile_t;
+
     // IE is memory-mapped to 0xFFFF but is located within the core
     // IR stores the current instruction
     typedef enum logic [3:0] {
@@ -126,6 +146,34 @@ package gb_cpu_common_pkg;
             default: return REG_TMP_H;
         endcase
     endfunction : getRegisterHigh
+
+    // Takes a regfile r8 encoding and returns the 8-bit register value
+    function automatic logic [7:0] getRegister8(regfile_t registers, regfile_r8_t r8);
+        case (r8)
+            REG_A:     return registers.a;
+            REG_F:     return registers.f;
+            REG_B:     return registers.b;
+            REG_C:     return registers.c;
+            REG_D:     return registers.d;
+            REG_E:     return registers.e;
+            REG_H:     return registers.h;
+            REG_L:     return registers.l;
+            REG_IR:    return registers.ir;
+            REG_IE:    return registers.ie;
+            REG_SP_L:  return registers.sp_lo;
+            REG_SP_H:  return registers.sp_hi;
+            REG_PC_L:  return registers.pc_lo;
+            REG_PC_H:  return registers.pc_hi;
+            REG_TMP_L: return registers.tmp_lo;
+            REG_TMP_H: return registers.tmp_hi;
+            default:   return registers.tmp_hi;
+        endcase
+    endfunction : getRegister8
+
+    // Takes a regfile r16 encoding and returns the 16-bit register value
+    function automatic logic [15:0] getRegister16(regfile_t registers, regfile_r16_t r16);
+        return {getRegister8(registers, getRegisterHigh(r16)), getRegister8(registers, getRegisterLow(r16))};
+    endfunction : getRegister16
 
     // These are decoded from the opcode, and specify a register
     typedef enum logic [2:0] {
