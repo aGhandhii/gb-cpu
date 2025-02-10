@@ -19,14 +19,14 @@ Outputs:
     cb_prefix_o         - if next instruction will be 0xCB prefixed
 */
 module gb_cpu_scheduler (
-    input  logic                   clk,
-    input  logic                   reset,
-    input  schedule_t              schedule,
-    input  logic             [2:0] curr_m_cycle,
-    input  logic                   cond_not_met,
-    output control_signals_t       control_next,
-    output logic             [2:0] next_m_cycle,
-    output logic                   cb_prefix_o
+ input  logic                   clk,
+ input  logic                   reset,
+ input  schedule_t              schedule,
+ input  logic             [2:0] curr_m_cycle,
+ input  logic                   cond_not_met,
+ output control_signals_t       control_next,
+ output logic             [2:0] next_m_cycle,
+ output logic                   cb_prefix_o
 );
 
     always_ff @(posedge clk) begin

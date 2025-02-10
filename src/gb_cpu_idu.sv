@@ -10,8 +10,8 @@ Outputs:
     out     - 16-bit output data
 */
 module gb_cpu_idu (
-    input idu_instruction_t instruction,
-    output logic [15:0] out
+ input idu_instruction_t instruction,
+ output logic [15:0] out
 );
 
     always_comb begin
