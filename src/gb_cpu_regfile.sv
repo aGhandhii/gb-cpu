@@ -26,9 +26,8 @@ Inputs:
 
     alu_req         - 8 bit register
     alu_data        - 8 bit value
-    alu_flags       - Flag output from the ALU
+    alu_flags       - Flags from the ALU
     alu_wren        - Write Enable for the ALU
-    alu_skip_flags  - Do not update flags in the F register
 
     idu_req         - 16 bit register
     idu_data        - 16 bit value
@@ -36,7 +35,7 @@ Inputs:
 
     data_bus_req    - 8 bit register (only relevant if IR or TMP)
     data_bus_data   - 8 bit value
-    data_bus_wren   - Mirrors the 'drive_data_bus' signal from the top level
+    data_bus_wren   - If we write the incoming value on the data bus
 
     set_adj         - Set the adjustment
     overwrite_sp    - Set the Stack Pointer to the TEMP register
@@ -52,7 +51,6 @@ module gb_cpu_regfile (
     logic [7:0] alu_data,
     alu_flags_t alu_flags,
     logic alu_wren,
-    logic alu_skip_flags,
     regfile_r16_t idu_req,
     logic [15:0] idu_data,
     logic idu_wren,
@@ -102,21 +100,19 @@ module gb_cpu_regfile (
             registers.ie     <= 8'd0;
             registers.sp_lo  <= 8'd0;
             registers.sp_hi  <= 8'd0;
-            registers.pc_lo  <= 8'd0;
-            registers.pc_hi  <= 8'd0;
+            registers.pc_lo  <= 8'hFF;
+            registers.pc_hi  <= 8'hFF;
             registers.tmp_lo <= 8'd0;
             registers.tmp_hi <= 8'd0;
         end else begin
-            registers.a <= registers.a;
-            registers.f <= registers.f;
-            registers.b <= registers.b;
-            registers.c <= registers.c;
-            registers.d <= registers.d;
-            registers.e <= registers.e;
-            registers.h <= registers.h;
-            registers.l <= registers.l;
-            $display("data req:%s\ndata val:%h\ndata wren:%b", data_bus_req.name(), data_bus_data, data_bus_wren);
-            $display("%s", ((data_bus_req == REG_IR) && data_bus_wren) ? "Overwrite IR" : "Do Not Overwrite IR");
+            registers.a      <= registers.a;
+            registers.f      <= registers.f;
+            registers.b      <= registers.b;
+            registers.c      <= registers.c;
+            registers.d      <= registers.d;
+            registers.e      <= registers.e;
+            registers.h      <= registers.h;
+            registers.l      <= registers.l;
             registers.ir     <= ((data_bus_req == REG_IR) && data_bus_wren) ? data_bus_data : registers.ir;
             registers.ie     <= registers.ie;  // FIXME
             registers.sp_lo  <= overwrite_sp ? registers.tmp_lo : registers.sp_lo;
@@ -133,13 +129,10 @@ module gb_cpu_regfile (
     always_ff @(negedge clk) begin
         /* verilog_format: off */
         registers.a         <= setNegedgeValue(registers.a,      REG_A,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
-        if (alu_skip_flags)
-            registers.f     <= registers.f;
+        if ((idu_req_lo == REG_F || idu_req_hi == REG_F) && idu_wren)
+            registers.f     <= setNegedgeValue(registers.f,      REG_F,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         else
-            if ((idu_req_lo == REG_F || idu_req_hi == REG_F) && idu_wren)
-                registers.f <= setNegedgeValue(registers.f,      REG_F,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
-            else
-                registers.f <= flagRegNext;
+            registers.f     <= flagRegNext;
         registers.b         <= setNegedgeValue(registers.b,      REG_B,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.c         <= setNegedgeValue(registers.c,      REG_C,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.d         <= setNegedgeValue(registers.d,      REG_D,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
