@@ -44,6 +44,7 @@ Inputs:
 Outputs:
     registers       - Register File for the CPU, all stored as 8-bit values
 */
+/* verilator lint_off MULTIDRIVEN */
 module gb_cpu_regfile (
     input logic clk,
     logic reset,
@@ -71,8 +72,12 @@ module gb_cpu_regfile (
     assign idu_data_lo = idu_data[7:0];
     assign idu_data_hi = idu_data[15:8];
 
+    // Standardize ALU flags to the F register
+    logic [7:0] flagRegNext;
+    assign flagRegNext = {alu_flags.Z, alu_flags.N, alu_flags.H, alu_flags.C, 4'h0};
+
     // Reduce redundancy, takes ALU and IDU requests then returns the output
-    // if either request will overwrite the existing value
+    // if either request overwrites the existing value
     function automatic logic [7:0] setNegedgeValue(
         logic [7:0] data_in, regfile_r8_t r8, logic [7:0] data_a, regfile_r8_t r8_a, logic wren_a, logic [7:0] data_b,
         regfile_r8_t r8_b, logic wren_b, logic [7:0] data_c, regfile_r8_t r8_c, logic wren_c);
@@ -102,14 +107,16 @@ module gb_cpu_regfile (
             registers.tmp_lo <= 8'd0;
             registers.tmp_hi <= 8'd0;
         end else begin
-            registers.a      <= registers.a;
-            registers.f      <= registers.f;
-            registers.b      <= registers.b;
-            registers.c      <= registers.c;
-            registers.d      <= registers.d;
-            registers.e      <= registers.e;
-            registers.h      <= registers.h;
-            registers.l      <= registers.l;
+            registers.a <= registers.a;
+            registers.f <= registers.f;
+            registers.b <= registers.b;
+            registers.c <= registers.c;
+            registers.d <= registers.d;
+            registers.e <= registers.e;
+            registers.h <= registers.h;
+            registers.l <= registers.l;
+            $display("data req:%s\ndata val:%h\ndata wren:%b", data_bus_req.name(), data_bus_data, data_bus_wren);
+            $display("%s", ((data_bus_req == REG_IR) && data_bus_wren) ? "Overwrite IR" : "Do Not Overwrite IR");
             registers.ir     <= ((data_bus_req == REG_IR) && data_bus_wren) ? data_bus_data : registers.ir;
             registers.ie     <= registers.ie;  // FIXME
             registers.sp_lo  <= overwrite_sp ? registers.tmp_lo : registers.sp_lo;
@@ -129,7 +136,10 @@ module gb_cpu_regfile (
         if (alu_skip_flags)
             registers.f     <= registers.f;
         else
-            registers.f     <= setNegedgeValue(registers.f,      REG_F,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
+            if ((idu_req_lo == REG_F || idu_req_hi == REG_F) && idu_wren)
+                registers.f <= setNegedgeValue(registers.f,      REG_F,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
+            else
+                registers.f <= flagRegNext;
         registers.b         <= setNegedgeValue(registers.b,      REG_B,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.c         <= setNegedgeValue(registers.c,      REG_C,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.d         <= setNegedgeValue(registers.d,      REG_D,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
@@ -148,3 +158,4 @@ module gb_cpu_regfile (
     end
 
 endmodule : gb_cpu_regfile
+/* verilator lint_on MULTIDRIVEN */

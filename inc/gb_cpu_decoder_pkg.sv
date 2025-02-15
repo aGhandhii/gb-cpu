@@ -107,8 +107,9 @@ package gb_cpu_decoder_pkg;
 
     // 8-BIT ARITHMETIC AND LOGICAL INSTRUCTIONS {{{
 
-    function static schedule_t arithmetic8Bit(alu_opcode_t alu_opcode, opcode_r8_t r8 = opcode_r8_t'(3'bxxx),
-                                              logic immediate_op = 1'b0, logic writeResult = 1'b1, logic incDec = 1'b0);
+    function automatic schedule_t arithmetic8Bit(alu_opcode_t alu_opcode, opcode_r8_t r8 = opcode_r8_t'(3'bxxx),
+                                                 logic immediate_op = 1'b0, logic writeResult = 1'b1,
+                                                 logic incDec = 1'b0);
 
         schedule_t schedule, blankSchedule;
         regfile_r8_t operand_b;
@@ -351,8 +352,8 @@ package gb_cpu_decoder_pkg;
 
     // 16-BIT ARITHMETIC INSTRUCTIONS {{{
 
-    function static schedule_t arithmetic16Bit(logic addSP = 1'b0, logic addHL = 1'b0, logic incDec = 1'b0,
-                                               opcode_r16_t r16 = opcode_r16_t'(2'bxx));
+    function automatic schedule_t arithmetic16Bit(logic addSP = 1'b0, logic addHL = 1'b0, logic incDec = 1'b0,
+                                                  opcode_r16_t r16 = opcode_r16_t'(2'bxx));
         // Internal Variables
         schedule_t schedule, blankSchedule;
         regfile_r8_t rr_lo, rr_hi;
