@@ -133,7 +133,7 @@ module gb_cpu (
         .idu_wren(curr_controls.idu_wren),
         .data_bus_req(curr_controls.data_bus_i_destination),
         .data_bus_data(data_i),
-        .data_bus_wren(~curr_controls.drive_data_bus),
+        .data_bus_wren(curr_controls.receive_data_bus),
         .set_adj(curr_controls.set_adj),
         .overwrite_sp(curr_controls.overwrite_sp),
         .registers(registers)

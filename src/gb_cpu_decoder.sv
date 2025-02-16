@@ -12,14 +12,6 @@ Inputs:
 
 Outputs:
     schedule    - M-cycle schedule for decoded instruction
-
-Notes:
-    - longest possible instruction takes 6 M-cycles
-    - we need to schedule 6 M-cycles worth of controls for each instruction
-    - use macros?
-    - for conditional operations, assume condition is true
-        - have external handling for false condition case
-
 */
 module gb_cpu_decoder (
     input  logic      [7:0] opcode,
@@ -31,7 +23,6 @@ module gb_cpu_decoder (
 
     always_comb begin : decoderCombinationalLogic
 
-        // Handle decoding groups dependent on the 0xCB prefix
         if (cb_prefix == 1'b0) begin
             case (opcode) inside
 
@@ -134,6 +125,7 @@ module gb_cpu_decoder (
             endcase
 
         end else begin
+            // 0xCB prefixed operations
             case (opcode) inside
 
                 //8'b00_000_???: $display("rlc r8");

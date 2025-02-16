@@ -238,7 +238,8 @@ package gb_cpu_common_pkg;
         // This will synthesize on an FPGA, so data bus is split for I/O
         regfile_r8_t data_bus_i_destination;  // where to write incoming data on bus
         regfile_r8_t data_bus_o_source;       // register to drive over data bus
-        logic        drive_data_bus;          // if high, push output - else take input
+        logic        receive_data_bus;        // write incoming data to registers
+        logic        drive_data_bus;          // if high, push output
 
         idu_opcode_t  idu_opcode;
         regfile_r16_t idu_operand;

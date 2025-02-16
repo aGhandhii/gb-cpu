@@ -14,11 +14,13 @@ module gb_cpu_tb ();
     logic [7:0] memory[65536];
     assign data_i = memory[addr_o];
 
-    // place simple instructions
     assign memory[0] = 8'b11_000_110;  // add a, imm8
     assign memory[1] = 8'h05;
     assign memory[2] = 8'b11_010_110;  // sub a, imm8
     assign memory[3] = 8'h02;
+    assign memory[4] = 8'b00_01_0011;  // inc de
+    assign memory[5] = 8'b00_01_0011;  // inc de
+    assign memory[6] = 8'b00_01_1011;  // dec de
 
     initial begin
         clk = 1'b0;
