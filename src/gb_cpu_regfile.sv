@@ -6,8 +6,11 @@ Stores the registers and handles read/write operations.
 The regfile gets write requests from the following sources:
   - ALU
   - IDU
-  - data bus
-  - CPU special instructions (set adjustment, overwrite the stack pointer)
+  - Data Bus
+  - Special CPU Operations
+    - Set 'adjustment' value for signed arithmetic
+    - Overwrite a 16 bit register with the contents in TEMP
+    - Set the Program Counter to an Interrupt Vector
 
 There should never be a condition where multiple sources try and write to a
 single source. Regardless, a priority scheme is implemented
@@ -21,27 +24,31 @@ positive edge.
       register value is on the bus at the next positive edge
 
 Inputs:
-    clk             - Machine Clock
-    reset           - System Reset
+    clk                     - Machine Clock
+    reset                   - System Reset
 
-    alu_req         - 8 bit register
-    alu_data        - 8 bit value
-    alu_flags       - Flags from the ALU
-    alu_wren        - Write Enable for the ALU
+    alu_req                 - 8 bit register
+    alu_data                - 8 bit value
+    alu_flags               - Flags from the ALU
+    alu_wren                - Write Enable for the ALU
 
-    idu_req         - 16 bit register
-    idu_data        - 16 bit value
-    idu_wren        - Write Enable for the IDU
+    idu_req                 - 16 bit register
+    idu_data                - 16 bit value
+    idu_wren                - Write Enable for the IDU
 
-    data_bus_req    - 8 bit register (only relevant if IR or TMP)
-    data_bus_data   - 8 bit value
-    data_bus_wren   - If we write the incoming value on the data bus
+    data_bus_req            - 8 bit register (only relevant if IR or TMP)
+    data_bus_data           - 8 bit value
+    data_bus_wren           - If we write the incoming value on the data bus
 
-    set_adj         - Set the adjustment
-    overwrite_sp    - Set the Stack Pointer to the TEMP register
+    set_adj                 - Set the adjustment
+    overwrite_req           - 16 Bit register to be overwritten by TEMP Register
+    overwrite_wren          - Write TEMP register contents to another 16-bit Register
+
+    write_interrupt_vector  - Overwrite with Interrupt Vector rather than TEMP
+    interrupt_vector        - Highest Priority Interrupt Vector
 
 Outputs:
-    registers       - Register File for the CPU, all stored as 8-bit values
+    registers               - Register File for the CPU, all stored as 8-bit values
 */
 /* verilator lint_off MULTIDRIVEN */
 module gb_cpu_regfile (
@@ -58,7 +65,10 @@ module gb_cpu_regfile (
     logic [7:0] data_bus_data,
     logic data_bus_wren,
     logic set_adj,
-    logic overwrite_sp,
+    regfile_r16_t overwrite_req,
+    logic overwrite_wren,
+    logic write_interrupt_vector,
+    logic [7:0] interrupt_vector,
     output regfile_t registers
 );
 
@@ -91,6 +101,7 @@ module gb_cpu_regfile (
     // Handle resets, data bus writes, and special operations
     always_ff @(posedge clk) begin
         if (reset) begin
+            registers.ir     <= 8'd0;
             registers.a      <= 8'd0;
             registers.f      <= 8'd0;
             registers.b      <= 8'd0;
@@ -99,7 +110,6 @@ module gb_cpu_regfile (
             registers.e      <= 8'd0;
             registers.h      <= 8'd0;
             registers.l      <= 8'd0;
-            registers.ir     <= 8'd0;
             registers.sp_lo  <= 8'd0;
             registers.sp_hi  <= 8'd0;
             registers.pc_lo  <= 8'hFF;
@@ -107,19 +117,24 @@ module gb_cpu_regfile (
             registers.tmp_lo <= 8'd0;
             registers.tmp_hi <= 8'd0;
         end else begin
-            registers.a      <= registers.a;
-            registers.f      <= registers.f;
-            registers.b      <= registers.b;
-            registers.c      <= registers.c;
-            registers.d      <= registers.d;
-            registers.e      <= registers.e;
-            registers.h      <= registers.h;
-            registers.l      <= registers.l;
-            registers.ir     <= ((data_bus_req == REG_IR) && data_bus_wren) ? data_bus_data : registers.ir;
-            registers.sp_lo  <= overwrite_sp ? registers.tmp_lo : registers.sp_lo;
-            registers.sp_hi  <= overwrite_sp ? registers.tmp_hi : registers.sp_hi;
-            registers.pc_lo  <= registers.pc_lo;
-            registers.pc_hi  <= registers.pc_hi;
+            registers.ir    <= ((data_bus_req == REG_IR) && data_bus_wren) ? data_bus_data : registers.ir;
+            registers.a     <= (overwrite_wren && (overwrite_req == REG_AF)) ? registers.tmp_lo : registers.a;
+            registers.f     <= (overwrite_wren && (overwrite_req == REG_AF)) ? registers.tmp_hi : registers.f;
+            registers.b     <= (overwrite_wren && (overwrite_req == REG_BC)) ? registers.tmp_lo : registers.b;
+            registers.c     <= (overwrite_wren && (overwrite_req == REG_BC)) ? registers.tmp_hi : registers.c;
+            registers.d     <= (overwrite_wren && (overwrite_req == REG_DE)) ? registers.tmp_lo : registers.d;
+            registers.e     <= (overwrite_wren && (overwrite_req == REG_DE)) ? registers.tmp_hi : registers.e;
+            registers.h     <= (overwrite_wren && (overwrite_req == REG_HL)) ? registers.tmp_lo : registers.h;
+            registers.l     <= (overwrite_wren && (overwrite_req == REG_HL)) ? registers.tmp_hi : registers.l;
+            registers.sp_lo <= (overwrite_wren && (overwrite_req == REG_SP)) ? registers.tmp_lo : registers.sp_lo;
+            registers.sp_hi <= (overwrite_wren && (overwrite_req == REG_SP)) ? registers.tmp_hi : registers.sp_hi;
+            if (write_interrupt_vector) begin
+                registers.pc_lo <= interrupt_vector;
+                registers.pc_hi <= 8'd0;
+            end else begin
+                registers.pc_lo <= (overwrite_wren && (overwrite_req == REG_PC)) ? registers.tmp_lo : registers.pc_lo;
+                registers.pc_hi <= (overwrite_wren && (overwrite_req == REG_PC)) ? registers.tmp_hi : registers.pc_hi;
+            end
             registers.tmp_lo <= ((data_bus_req == REG_TMP_L) && data_bus_wren) ? data_bus_data : registers.tmp_lo;
             if (set_adj) registers.tmp_hi <= {8{registers.tmp_lo[7]}};
             else registers.tmp_hi <= ((data_bus_req == REG_TMP_H) && data_bus_wren) ? data_bus_data : registers.tmp_hi;

@@ -1,14 +1,6 @@
 import gb_cpu_common_pkg::*;
 
-/* Handle Scheduling for the Decoder Unit
-
-This would synthesize as a large LUT
-
-By design, we write the incoming data from the data bus if it is routed to the
-IR or TEMP registers - to avoid unwanted writes, we explicitly set the data bus
-destination to register F when it is not in use, as this will not be written
-
-*/
+/* Handle Scheduling for the Decoder Unit */
 package gb_cpu_decoder_pkg;
 
     // OPCODE ENCODING CONVERTERS {{{
@@ -70,14 +62,14 @@ package gb_cpu_decoder_pkg;
         for (logic [2:0] i = 0; i < 3'd6; i++) begin
             schedule.instruction_controls[i].addr_bus_source        = addr_bus_source_t'(2'bxx);
             schedule.instruction_controls[i].addr_bus_source_r8     = regfile_r8_t'(4'hx);
-            schedule.instruction_controls[i].addr_bus_source_r16    = regfile_r16_t'(8'hxx);
+            schedule.instruction_controls[i].addr_bus_source_r16    = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[i].data_bus_i_destination = regfile_r8_t'(4'hx);
             schedule.instruction_controls[i].data_bus_o_source      = regfile_r8_t'(4'hx);
             schedule.instruction_controls[i].drive_data_bus         = 1'bx;
             schedule.instruction_controls[i].receive_data_bus       = 1'bx;
             schedule.instruction_controls[i].idu_opcode             = idu_opcode_t'(2'bxx);
-            schedule.instruction_controls[i].idu_operand            = regfile_r16_t'(8'hxx);
-            schedule.instruction_controls[i].idu_destination        = regfile_r16_t'(8'hxx);
+            schedule.instruction_controls[i].idu_operand            = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[i].idu_destination        = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[i].idu_wren               = 1'bx;
             schedule.instruction_controls[i].alu_opcode             = alu_opcode_t'(5'bxxxxx);
             schedule.instruction_controls[i].alu_operand_a_register = regfile_r8_t'(4'hx);
@@ -87,9 +79,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[i].alu_wren               = 1'bx;
             schedule.instruction_controls[i].enable_interrupts      = 1'bx;
             schedule.instruction_controls[i].disable_interrupts     = 1'bx;
+            schedule.instruction_controls[i].write_interrupt_vector = 1'bx;
+            schedule.instruction_controls[i].clear_interrupt_flag   = 1'bx;
             schedule.instruction_controls[i].rst_cmd                = 1'bx;
             schedule.instruction_controls[i].cc_check               = 1'bx;
-            schedule.instruction_controls[i].overwrite_sp           = 1'bx;
+            schedule.instruction_controls[i].overwrite_wren         = 1'bx;
+            schedule.instruction_controls[i].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[i].set_adj                = 1'bx;
             schedule.instruction_controls[i].add_adj                = 1'bx;
         end
@@ -99,6 +94,160 @@ package gb_cpu_decoder_pkg;
     // }}}
 
     // INTERRUPT SERVICE ROUTINE (ISR) {{{
+
+    function automatic schedule_t interruptServiceRoutine();
+
+        schedule_t schedule, blankSchedule;
+        schedule.m_cycles                                       = 3'd4;
+        schedule.bit_cmd                                        = 1'b0;
+        schedule.cb_prefix_next                                 = 1'b0;
+        schedule.condition                                      = condition_code_t'(2'bxx);
+        blankSchedule                                           = emptySchedule();
+
+        // Cycle 1 - Decrement Stack so Program Counter can be saved
+        schedule.instruction_controls[0].addr_bus_source        = ADDR_BUS_REG16;
+        schedule.instruction_controls[0].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[0].addr_bus_source_r16    = REG_SP;
+        schedule.instruction_controls[0].data_bus_i_destination = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[0].data_bus_o_source      = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[0].drive_data_bus         = 1'b0;
+        schedule.instruction_controls[0].receive_data_bus       = 1'b0;
+        schedule.instruction_controls[0].idu_opcode             = IDU_DEC;
+        schedule.instruction_controls[0].idu_operand            = REG_SP;
+        schedule.instruction_controls[0].idu_destination        = REG_SP;
+        schedule.instruction_controls[0].idu_wren               = 1'b1;
+        schedule.instruction_controls[0].alu_opcode             = ALU_NOP;
+        schedule.instruction_controls[0].alu_operand_a_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[0].alu_operand_b_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[0].alu_inc_dec            = 1'bx;
+        schedule.instruction_controls[0].alu_destination        = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[0].alu_wren               = 1'b0;
+        schedule.instruction_controls[0].enable_interrupts      = 1'b0;
+        schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+        schedule.instruction_controls[0].write_interrupt_vector = 1'b0;
+        schedule.instruction_controls[0].clear_interrupt_flag   = 1'b0;
+        schedule.instruction_controls[0].rst_cmd                = 1'b0;
+        schedule.instruction_controls[0].cc_check               = 1'b0;
+        schedule.instruction_controls[0].overwrite_wren         = 1'b0;
+        schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[0].set_adj                = 1'b0;
+        schedule.instruction_controls[0].add_adj                = 1'b0;
+        // Cycle 2 - Push High Byte of Program Counter to the Stack
+        schedule.instruction_controls[1].addr_bus_source        = ADDR_BUS_REG16;
+        schedule.instruction_controls[1].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[1].addr_bus_source_r16    = REG_SP;
+        schedule.instruction_controls[1].data_bus_i_destination = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[1].data_bus_o_source      = REG_SP_H;
+        schedule.instruction_controls[1].drive_data_bus         = 1'b1;
+        schedule.instruction_controls[1].receive_data_bus       = 1'b0;
+        schedule.instruction_controls[1].idu_opcode             = IDU_DEC;
+        schedule.instruction_controls[1].idu_operand            = REG_SP;
+        schedule.instruction_controls[1].idu_destination        = REG_SP;
+        schedule.instruction_controls[1].idu_wren               = 1'b1;
+        schedule.instruction_controls[1].alu_opcode             = ALU_NOP;
+        schedule.instruction_controls[1].alu_operand_a_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[1].alu_operand_b_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[1].alu_inc_dec            = 1'bx;
+        schedule.instruction_controls[1].alu_destination        = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[1].alu_wren               = 1'b0;
+        schedule.instruction_controls[1].enable_interrupts      = 1'b0;
+        schedule.instruction_controls[1].disable_interrupts     = 1'b0;
+        schedule.instruction_controls[1].write_interrupt_vector = 1'b0;
+        schedule.instruction_controls[1].clear_interrupt_flag   = 1'b0;
+        schedule.instruction_controls[1].rst_cmd                = 1'b0;
+        schedule.instruction_controls[1].cc_check               = 1'b0;
+        schedule.instruction_controls[1].overwrite_wren         = 1'b0;
+        schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[1].set_adj                = 1'b0;
+        schedule.instruction_controls[1].add_adj                = 1'b0;
+        // Cycle 3 - Push Low Byte of Program Counter to the Stack
+        schedule.instruction_controls[2].addr_bus_source        = ADDR_BUS_REG16;
+        schedule.instruction_controls[2].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[2].addr_bus_source_r16    = REG_SP;
+        schedule.instruction_controls[2].data_bus_i_destination = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[2].data_bus_o_source      = REG_SP_L;
+        schedule.instruction_controls[2].drive_data_bus         = 1'b1;
+        schedule.instruction_controls[2].receive_data_bus       = 1'b0;
+        schedule.instruction_controls[2].idu_opcode             = IDU_NOP;
+        schedule.instruction_controls[2].idu_operand            = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[2].idu_destination        = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[2].idu_wren               = 1'b0;
+        schedule.instruction_controls[2].alu_opcode             = ALU_NOP;
+        schedule.instruction_controls[2].alu_operand_a_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[2].alu_operand_b_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[2].alu_inc_dec            = 1'bx;
+        schedule.instruction_controls[2].alu_destination        = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[2].alu_wren               = 1'b0;
+        schedule.instruction_controls[2].enable_interrupts      = 1'b0;
+        schedule.instruction_controls[2].disable_interrupts     = 1'b0;
+        schedule.instruction_controls[2].write_interrupt_vector = 1'b0;
+        schedule.instruction_controls[2].clear_interrupt_flag   = 1'b0;
+        schedule.instruction_controls[2].rst_cmd                = 1'b0;
+        schedule.instruction_controls[2].cc_check               = 1'b0;
+        schedule.instruction_controls[2].overwrite_wren         = 1'b0;
+        schedule.instruction_controls[2].overwrite_req          = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[2].set_adj                = 1'b0;
+        schedule.instruction_controls[2].add_adj                = 1'b0;
+        // Cycle 4 - Load the Interrupt Vector into the Program Counter, Clear IF flag, Disable Interrupts
+        schedule.instruction_controls[3].addr_bus_source        = ADDR_BUS_REG16;
+        schedule.instruction_controls[3].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[3].addr_bus_source_r16    = REG_PC;
+        schedule.instruction_controls[3].data_bus_i_destination = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[3].data_bus_o_source      = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[3].drive_data_bus         = 1'b0;
+        schedule.instruction_controls[3].receive_data_bus       = 1'b0;
+        schedule.instruction_controls[3].idu_opcode             = IDU_NOP;
+        schedule.instruction_controls[3].idu_operand            = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[3].idu_destination        = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[3].idu_wren               = 1'b0;
+        schedule.instruction_controls[3].alu_opcode             = ALU_NOP;
+        schedule.instruction_controls[3].alu_operand_a_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[3].alu_operand_b_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[3].alu_inc_dec            = 1'bx;
+        schedule.instruction_controls[3].alu_destination        = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[3].alu_wren               = 1'b0;
+        schedule.instruction_controls[3].enable_interrupts      = 1'b0;
+        schedule.instruction_controls[3].disable_interrupts     = 1'b1;
+        schedule.instruction_controls[3].write_interrupt_vector = 1'b1;
+        schedule.instruction_controls[3].clear_interrupt_flag   = 1'b1;
+        schedule.instruction_controls[3].rst_cmd                = 1'b0;
+        schedule.instruction_controls[3].cc_check               = 1'b0;
+        schedule.instruction_controls[3].overwrite_wren         = 1'b1;
+        schedule.instruction_controls[3].overwrite_req          = REG_PC;
+        schedule.instruction_controls[3].set_adj                = 1'b0;
+        schedule.instruction_controls[3].add_adj                = 1'b0;
+        // Cycle 5 - Load the next instruction to IR, do not increment Program Counter
+        schedule.instruction_controls[4].addr_bus_source        = ADDR_BUS_REG16;
+        schedule.instruction_controls[4].addr_bus_source_r8     = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[4].addr_bus_source_r16    = REG_PC;
+        schedule.instruction_controls[4].data_bus_i_destination = REG_IR;
+        schedule.instruction_controls[4].data_bus_o_source      = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[4].drive_data_bus         = 1'b0;
+        schedule.instruction_controls[4].receive_data_bus       = 1'b1;
+        schedule.instruction_controls[4].idu_opcode             = IDU_NOP;
+        schedule.instruction_controls[4].idu_operand            = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[4].idu_destination        = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[4].idu_wren               = 1'b0;
+        schedule.instruction_controls[4].alu_opcode             = ALU_NOP;
+        schedule.instruction_controls[4].alu_operand_a_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[4].alu_operand_b_register = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[4].alu_inc_dec            = 1'bx;
+        schedule.instruction_controls[4].alu_destination        = regfile_r8_t'(4'hx);
+        schedule.instruction_controls[4].alu_wren               = 1'b0;
+        schedule.instruction_controls[4].enable_interrupts      = 1'b0;
+        schedule.instruction_controls[4].disable_interrupts     = 1'b0;
+        schedule.instruction_controls[4].write_interrupt_vector = 1'b0;
+        schedule.instruction_controls[4].clear_interrupt_flag   = 1'b0;
+        schedule.instruction_controls[4].rst_cmd                = 1'b0;
+        schedule.instruction_controls[4].cc_check               = 1'b0;
+        schedule.instruction_controls[4].overwrite_wren         = 1'b0;
+        schedule.instruction_controls[4].overwrite_req          = regfile_r16_t'(3'bxxx);
+        schedule.instruction_controls[4].set_adj                = 1'b0;
+        schedule.instruction_controls[4].add_adj                = 1'b0;
+        // Fill remaining instruction slots
+        schedule.instruction_controls[5]                        = blankSchedule.instruction_controls[5];
+        return schedule;
+    endfunction : interruptServiceRoutine
 
     // }}}
 
@@ -121,7 +270,7 @@ package gb_cpu_decoder_pkg;
         schedule.bit_cmd        = 1'b0;
         schedule.cb_prefix_next = 1'b0;
         schedule.condition      = condition_code_t'(2'bxx);
-        blankSchedule           = emptySchedule();  // sim gets mad when a variable and function share a name
+        blankSchedule           = emptySchedule();
         operand_b               = opcodeR8Decode(r8);
 
         if (incDec && (r8 == R8_HL_ADDR)) begin
@@ -136,8 +285,8 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].drive_data_bus         = 1'b0;
             schedule.instruction_controls[0].receive_data_bus       = 1'b1;
             schedule.instruction_controls[0].idu_opcode             = IDU_NOP;
-            schedule.instruction_controls[0].idu_operand            = regfile_r16_t'(8'hxx);
-            schedule.instruction_controls[0].idu_destination        = regfile_r16_t'(8'hxx);
+            schedule.instruction_controls[0].idu_operand            = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[0].idu_destination        = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].idu_wren               = 1'b0;
             schedule.instruction_controls[0].alu_opcode             = ALU_NOP;
             schedule.instruction_controls[0].alu_operand_a_register = regfile_r8_t'(4'hx);
@@ -147,9 +296,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].alu_wren               = 1'b0;
             schedule.instruction_controls[0].enable_interrupts      = 1'b0;
             schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[0].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[0].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[0].rst_cmd                = 1'b0;
             schedule.instruction_controls[0].cc_check               = 1'b0;
-            schedule.instruction_controls[0].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[0].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].set_adj                = 1'b0;
             schedule.instruction_controls[0].add_adj                = 1'b0;
             // Cycle 2 - inc/dec the memory value and send it back over the data bus
@@ -161,8 +313,8 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].drive_data_bus         = 1'b1;
             schedule.instruction_controls[1].receive_data_bus       = 1'b0;
             schedule.instruction_controls[1].idu_opcode             = IDU_NOP;
-            schedule.instruction_controls[1].idu_operand            = regfile_r16_t'(8'hxx);
-            schedule.instruction_controls[1].idu_destination        = regfile_r16_t'(8'hxx);
+            schedule.instruction_controls[1].idu_operand            = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[1].idu_destination        = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[1].idu_wren               = 1'b0;
             schedule.instruction_controls[1].alu_opcode             = alu_opcode;
             schedule.instruction_controls[1].alu_operand_a_register = REG_A;
@@ -172,9 +324,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].alu_wren               = writeResult;
             schedule.instruction_controls[1].enable_interrupts      = 1'b0;
             schedule.instruction_controls[1].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[1].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[1].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[1].rst_cmd                = 1'b0;
             schedule.instruction_controls[1].cc_check               = 1'b0;
-            schedule.instruction_controls[1].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[1].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[1].set_adj                = 1'b0;
             schedule.instruction_controls[1].add_adj                = 1'b0;
             // Cycle 3 - request next instruction
@@ -197,9 +352,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[2].alu_wren               = 1'b0;
             schedule.instruction_controls[2].enable_interrupts      = 1'b0;
             schedule.instruction_controls[2].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[2].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[2].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[2].rst_cmd                = 1'b0;
             schedule.instruction_controls[2].cc_check               = 1'b0;
-            schedule.instruction_controls[2].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[2].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[2].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[2].set_adj                = 1'b0;
             schedule.instruction_controls[2].add_adj                = 1'b0;
             // Fill remaining instruction slots
@@ -229,9 +387,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].alu_wren               = 1'b0;
             schedule.instruction_controls[0].enable_interrupts      = 1'b0;
             schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[0].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[0].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[0].rst_cmd                = 1'b0;
             schedule.instruction_controls[0].cc_check               = 1'b0;
-            schedule.instruction_controls[0].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[0].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].set_adj                = 1'b0;
             schedule.instruction_controls[0].add_adj                = 1'b0;
             // Cycle 2 - perform arithmetic with the immediate
@@ -254,9 +415,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].alu_wren               = writeResult;
             schedule.instruction_controls[1].enable_interrupts      = 1'b0;
             schedule.instruction_controls[1].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[1].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[1].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[1].rst_cmd                = 1'b0;
             schedule.instruction_controls[1].cc_check               = 1'b0;
-            schedule.instruction_controls[1].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[1].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[1].set_adj                = 1'b0;
             schedule.instruction_controls[1].add_adj                = 1'b0;
             // Fill remaining instruction slots
@@ -276,8 +440,8 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].drive_data_bus         = 1'b0;
             schedule.instruction_controls[0].receive_data_bus       = 1'b1;
             schedule.instruction_controls[0].idu_opcode             = IDU_NOP;
-            schedule.instruction_controls[0].idu_operand            = regfile_r16_t'(8'hxx);
-            schedule.instruction_controls[0].idu_destination        = regfile_r16_t'(8'hxx);
+            schedule.instruction_controls[0].idu_operand            = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[0].idu_destination        = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].idu_wren               = 1'b0;
             schedule.instruction_controls[0].alu_opcode             = ALU_NOP;
             schedule.instruction_controls[0].alu_operand_a_register = regfile_r8_t'(4'hx);
@@ -287,9 +451,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].alu_wren               = 1'b0;
             schedule.instruction_controls[0].enable_interrupts      = 1'b0;
             schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[0].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[0].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[0].rst_cmd                = 1'b0;
             schedule.instruction_controls[0].cc_check               = 1'b0;
-            schedule.instruction_controls[0].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[0].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].set_adj                = 1'b0;
             schedule.instruction_controls[0].add_adj                = 1'b0;
             // Cycle 2 - perform arithmetic
@@ -312,9 +479,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].alu_wren               = writeResult;
             schedule.instruction_controls[1].enable_interrupts      = 1'b0;
             schedule.instruction_controls[1].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[1].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[1].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[1].rst_cmd                = 1'b0;
             schedule.instruction_controls[1].cc_check               = 1'b0;
-            schedule.instruction_controls[1].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[1].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[1].set_adj                = 1'b0;
             schedule.instruction_controls[1].add_adj                = 1'b0;
             // Fill remaining instruction slots
@@ -344,9 +514,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].alu_wren               = writeResult;
             schedule.instruction_controls[0].enable_interrupts      = 1'b0;
             schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[0].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[0].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[0].rst_cmd                = 1'b0;
             schedule.instruction_controls[0].cc_check               = 1'b0;
-            schedule.instruction_controls[0].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[0].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].set_adj                = 1'b0;
             schedule.instruction_controls[0].add_adj                = 1'b0;
             // Fill remaining instruction slots
@@ -404,9 +577,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].alu_wren               = 1'b0;
             schedule.instruction_controls[0].enable_interrupts      = 1'b0;
             schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[0].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[0].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[0].rst_cmd                = 1'b0;
             schedule.instruction_controls[0].cc_check               = 1'b0;
-            schedule.instruction_controls[0].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[0].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].set_adj                = 1'b0;
             schedule.instruction_controls[0].add_adj                = 1'b0;
             // Cycle 2 - unsigned add of immediate and lsb of SP
@@ -429,9 +605,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].alu_wren               = 1'b1;
             schedule.instruction_controls[1].enable_interrupts      = 1'b0;
             schedule.instruction_controls[1].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[1].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[1].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[1].rst_cmd                = 1'b0;
             schedule.instruction_controls[1].cc_check               = 1'b0;
-            schedule.instruction_controls[1].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[1].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[1].set_adj                = 1'b1;
             schedule.instruction_controls[1].add_adj                = 1'b0;
             // Cycle 3 - adc with sign extension of immediate and msb of SP
@@ -454,9 +633,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[2].alu_wren               = 1'b1;
             schedule.instruction_controls[2].enable_interrupts      = 1'b0;
             schedule.instruction_controls[2].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[2].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[2].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[2].rst_cmd                = 1'b0;
             schedule.instruction_controls[2].cc_check               = 1'b0;
-            schedule.instruction_controls[2].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[2].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[2].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[2].set_adj                = 1'b0;
             schedule.instruction_controls[2].add_adj                = 1'b1;
             // Cycle 4 - request next opcode and overwrite SP
@@ -479,9 +661,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[3].alu_wren               = 1'b0;
             schedule.instruction_controls[3].enable_interrupts      = 1'b0;
             schedule.instruction_controls[3].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[3].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[3].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[3].rst_cmd                = 1'b0;
             schedule.instruction_controls[3].cc_check               = 1'b0;
-            schedule.instruction_controls[3].overwrite_sp           = 1'b1;
+            schedule.instruction_controls[3].overwrite_wren         = 1'b1;
+            schedule.instruction_controls[3].overwrite_req          = REG_SP;
             schedule.instruction_controls[3].set_adj                = 1'b0;
             schedule.instruction_controls[3].add_adj                = 1'b0;
             // Fill remaining instruction slots
@@ -510,9 +695,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].alu_wren               = 1'b1;
             schedule.instruction_controls[0].enable_interrupts      = 1'b0;
             schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[0].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[0].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[0].rst_cmd                = 1'b0;
             schedule.instruction_controls[0].cc_check               = 1'b0;
-            schedule.instruction_controls[0].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[0].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].set_adj                = 1'b0;
             schedule.instruction_controls[0].add_adj                = 1'b0;
             // Cycle 2 - addition for msb and request the next opcode
@@ -535,9 +723,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].alu_wren               = 1'b1;
             schedule.instruction_controls[1].enable_interrupts      = 1'b0;
             schedule.instruction_controls[1].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[1].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[1].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[1].rst_cmd                = 1'b0;
             schedule.instruction_controls[1].cc_check               = 1'b0;
-            schedule.instruction_controls[1].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[1].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[1].set_adj                = 1'b0;
             schedule.instruction_controls[1].add_adj                = 1'b0;
             // Fill remaining instruction slots
@@ -568,9 +759,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].alu_wren               = 1'b0;
             schedule.instruction_controls[0].enable_interrupts      = 1'b0;
             schedule.instruction_controls[0].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[0].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[0].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[0].rst_cmd                = 1'b0;
             schedule.instruction_controls[0].cc_check               = 1'b0;
-            schedule.instruction_controls[0].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[0].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[0].set_adj                = 1'b0;
             schedule.instruction_controls[0].add_adj                = 1'b0;
             // Cycle 2 - request the next opcode
@@ -593,9 +787,12 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].alu_wren               = 1'b0;
             schedule.instruction_controls[1].enable_interrupts      = 1'b0;
             schedule.instruction_controls[1].disable_interrupts     = 1'b0;
+            schedule.instruction_controls[1].write_interrupt_vector = 1'b0;
+            schedule.instruction_controls[1].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[1].rst_cmd                = 1'b0;
             schedule.instruction_controls[1].cc_check               = 1'b0;
-            schedule.instruction_controls[1].overwrite_sp           = 1'b0;
+            schedule.instruction_controls[1].overwrite_wren         = 1'b0;
+            schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
             schedule.instruction_controls[1].set_adj                = 1'b0;
             schedule.instruction_controls[1].add_adj                = 1'b0;
             // Fill remaining instruction slots

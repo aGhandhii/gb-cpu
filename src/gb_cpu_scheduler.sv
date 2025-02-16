@@ -2,12 +2,12 @@ import gb_cpu_common_pkg::*;
 /* CISC Scheduler for the gameboy CPU
 
 Synchronous logic to handle instruction incrementation on M-cycles
+Combinational logic to avoid race conditions and output control signals
 
 Also handles event-driven cases:
-    - condition code not met
-    - CB prefixing
-
-Combinational logic to avoid race conditions and output control signals
+    - Condition Code Checks
+    - 0xCB Prefix Requests
+    - Interrupt Dispatch Requests
 
 Inputs:
     clk                 - Machine (M) Clock
@@ -15,10 +15,12 @@ Inputs:
     schedule            - the instruction schedule for the current opcode
     curr_m_cycle        - M cycle counter for current instruction
     cond_not_met        - if a condition check was executed but failed
+    interrupt_queued    - if the next instruction will be the ISR
 
 Outputs:
     control             - control signals for the next M-cycle
     cb_prefix_o         - if next instruction will be 0xCB prefixed
+    isr_cmd             - next instruction will be ISR
 */
 module gb_cpu_scheduler (
     input  logic                   clk,
@@ -26,9 +28,11 @@ module gb_cpu_scheduler (
     input  schedule_t              schedule,
     input  logic             [2:0] curr_m_cycle,
     input  logic                   cond_not_met,
+    input  logic                   interrupt_queued,
     output control_signals_t       control_next,
     output logic             [2:0] next_m_cycle,
-    output logic                   cb_prefix_o
+    output logic                   cb_prefix_o,
+    output logic                   isr_cmd
 );
 
     // Internal Signals
@@ -60,9 +64,12 @@ module gb_cpu_scheduler (
             control_next.alu_wren               = 1'b0;
             control_next.enable_interrupts      = 1'b0;
             control_next.disable_interrupts     = 1'b0;
+            control_next.write_interrupt_vector = 1'b0;
+            control_next.clear_interrupt_flag   = 1'b0;
             control_next.rst_cmd                = 1'b0;
             control_next.cc_check               = 1'b0;
-            control_next.overwrite_sp           = 1'b0;
+            control_next.overwrite_wren         = 1'b0;
+            control_next.overwrite_req          = regfile_r16_t'(3'bxxx);
             control_next.set_adj                = 1'b0;
             control_next.add_adj                = 1'b0;
         end
@@ -76,6 +83,7 @@ module gb_cpu_scheduler (
             load_from_schedule <= 1'b0;
             next_m_cycle       <= 3'd0;
             cb_prefix_o        <= 1'b0;
+            isr_cmd            <= 1'b0;
         end else if (curr_m_cycle == 3'd0) begin
             // Load the next cycle count
             next_m_cycle       <= schedule.m_cycles;
@@ -83,12 +91,16 @@ module gb_cpu_scheduler (
             load_from_schedule <= 1'b1;
             // Check for 0xCB prefixing
             cb_prefix_o        <= schedule.cb_prefix_next ? 1'b1 : 1'b0;
+            // Check for ISR request
+            if (schedule.cb_prefix_next) isr_cmd <= 1'b0;
+            else isr_cmd <= interrupt_queued ? 1'b1 : 1'b0;
         end else begin
             // Decrement the cycle count for the instruction
             next_m_cycle       <= curr_m_cycle - 3'd1;
             // Load in the next instruction
             load_from_schedule <= 1'b1;
             cb_prefix_o        <= cb_prefix_o;
+            isr_cmd            <= isr_cmd;
         end
     end
 

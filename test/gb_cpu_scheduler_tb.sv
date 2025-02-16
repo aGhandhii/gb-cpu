@@ -7,9 +7,11 @@ module gb_cpu_scheduler_tb ();
     schedule_t              schedule;
     logic             [2:0] curr_m_cycle;
     logic                   cond_not_met;
+    logic                   interrupt_queued;
     control_signals_t       control_next;
     logic             [2:0] next_m_cycle;
     logic                   cb_prefix_o;
+    logic                   isr_cmd;
 
     assign curr_m_cycle = next_m_cycle;
 
@@ -106,9 +108,12 @@ module gb_cpu_scheduler_tb ();
         sysReset();
         @(posedge clk);
         schedule.cb_prefix_next = 1'b1;
+        interrupt_queued = 1'b1;
         repeat (3) @(posedge clk);
         schedule.cb_prefix_next = 1'b0;
-        repeat (6) @(posedge clk);
+        repeat (3) @(posedge clk);
+        interrupt_queued = 1'b0;
+        repeat (4) @(posedge clk);
 
         $finish();
     end

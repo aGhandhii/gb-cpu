@@ -9,6 +9,7 @@ https://gbdev.io/pandocs/CPU_Instruction_Set.html
 Inputs:
     opcode      - 8-bit instruction from IR
     cb_prefix   - If instruction is 0xCB prefixed
+    isr_cmd     - If the instruction will be the ISR
 
 Outputs:
     schedule    - M-cycle schedule for decoded instruction
@@ -16,6 +17,7 @@ Outputs:
 module gb_cpu_decoder (
     input  logic      [7:0] opcode,
     input  logic            cb_prefix,
+    input  logic            isr_cmd,
     output schedule_t       schedule
 );
 
@@ -23,7 +25,12 @@ module gb_cpu_decoder (
 
     always_comb begin : decoderCombinationalLogic
 
-        if (cb_prefix == 1'b0) begin
+        if (isr_cmd) begin
+
+            // Schedule the ISR
+            schedule = interruptServiceRoutine();
+
+        end else if (cb_prefix == 1'b0) begin
             case (opcode) inside
 
                 //8'b00_000000: // No Op

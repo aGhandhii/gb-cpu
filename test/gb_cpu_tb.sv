@@ -9,6 +9,7 @@ module gb_cpu_tb ();
     logic [15:0] addr_o;
     logic [ 7:0] data_o;
     logic        drive_data_bus;
+    logic        clear_interrupt_flag;
 
     gb_cpu dut (.*);
 

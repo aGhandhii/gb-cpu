@@ -250,16 +250,19 @@ package gb_cpu_common_pkg;
         logic        alu_wren;
 
         // There are a few additional possible 'miscellaneous operations'
-        logic enable_interrupts;   // set IME (delayed by 1 cycle)
-        logic disable_interrupts;  // reset IME
-        logic rst_cmd;             // set PC to restart address
-        logic cc_check;            // check condition code
-        logic overwrite_sp;        // write contents of temp register to SP
+        logic         enable_interrupts;       // set IME (delayed by 1 cycle)
+        logic         disable_interrupts;      // reset IME
+        logic         write_interrupt_vector;  // Write highest priority interrupt vector to PC
+        logic         clear_interrupt_flag;    // Clear highest priority flag in IF
+        logic         rst_cmd;                 // set PC to restart address
+        logic         cc_check;                // check condition code
+        logic         overwrite_wren;          // write contents of temp register to other 16-bit register
+        regfile_r16_t overwrite_req;           // 16-bit register to overwrite with TEMP
         // These signals are needed for the following instructions:
         //   - ld  HL, SP+e
         //   - add SP, e
-        logic set_adj;             // set the signed arithmetic adjust value
-        logic add_adj;             // force the alu input to be adj, and do not set flags
+        logic         set_adj;                 // set the signed arithmetic adjust value
+        logic         add_adj;                 // force the alu input to be adj, and do not set flags
 
     } control_signals_t;
 

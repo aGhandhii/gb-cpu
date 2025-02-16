@@ -4,6 +4,7 @@ module gb_cpu_decoder_tb ();
 
     logic      [7:0] opcode;
     logic            cb_prefix;
+    logic            isr_cmd;
     schedule_t       schedule;
 
     // Instance
@@ -41,8 +42,11 @@ module gb_cpu_decoder_tb ();
         //opcode = 8'b00_01_1001;
         //#1;
 
-        // add sp, imm8
-        opcode = 8'b11_101000;
+        //// add sp, imm8
+        //opcode = 8'b11_101000;
+        //#1;
+
+        isr_cmd   = 1'b1;
         #1;
 
         $finish();

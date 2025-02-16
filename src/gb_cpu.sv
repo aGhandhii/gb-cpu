@@ -2,16 +2,17 @@ import gb_cpu_common_pkg::*;
 /* Top level module for the gameboy CPU
 
 Inputs:
-    clk     - Machine (M) Clock
-    reset   - System Reset
-    data_i  - Incoming Data Bus
-    reg_IF  - Interrupt Flag Register
-    reg_IE  - Interrupt Enable Register
+    clk                     - Machine (M) Clock
+    reset                   - System Reset
+    data_i                  - Incoming Data Bus
+    reg_IF                  - Interrupt Flag Register
+    reg_IE                  - Interrupt Enable Register
 
 Outputs:
-    addr_o  - Outgoing Address Bus
-    data_o  - Outgoing Data Bus
-    drive_data_bus - write enable for data out
+    addr_o                  - Outgoing Address Bus
+    data_o                  - Outgoing Data Bus
+    drive_data_bus          - write enable for data out
+    clear_interrupt_flag    - Reset highest priority Interrupt Flag Bit
 */
 /* verilator lint_off MULTIDRIVEN */
 module gb_cpu (
@@ -22,7 +23,8 @@ module gb_cpu (
     input  logic [ 7:0] reg_IE,
     output logic [15:0] addr_o,
     output logic [ 7:0] data_o,
-    output logic        drive_data_bus
+    output logic        drive_data_bus,
+    output logic        clear_interrupt_flag
 );
 
     // Interrupt Master Enable
@@ -41,6 +43,7 @@ module gb_cpu (
     logic                   cond_not_met;
     control_signals_t       curr_controls;
     logic                   cb_prefix;
+    logic                   isr_cmd;
 
     // Instructions to feed ALU and IDU
     alu_instruction_t       alu_instruction;
@@ -67,7 +70,7 @@ module gb_cpu (
             alu_instruction.operand_b = {5'b00000, registers.ir[5:3]};
         end else if (curr_controls.rst_cmd) begin
             // pass adjusted address to tmp_lo
-            // for this command we will write addr to tmp_lo, then 0x00 to tmp_hi, then do overwrite_sp
+            // for this command we will write addr to tmp_lo, then 0x00 to tmp_hi, then overwrite SP
             alu_instruction.operand_a = {2'b00, registers.ir[5:3], 3'b000};
             alu_instruction.operand_b = getRegister8(registers, curr_controls.alu_operand_b_register);
         end else if (curr_controls.alu_inc_dec) begin
@@ -89,6 +92,22 @@ module gb_cpu (
         else if (enable_interrupts_delayed) IME <= 1'b1;
         else IME <= IME;
     end
+
+    // Check if the next instruction will be an interrupt
+    logic interrupt_queued;
+    assign interrupt_queued = (IME && ((reg_IF & reg_IE) != 8'd0)) ? 1'b1 : 1'b0;
+    assign clear_interrupt_flag = curr_controls.clear_interrupt_flag;
+
+    // Get the corresponding interrupt_vector from IF
+    logic [7:0] interrupt_vector;
+    always_comb begin : getInterruptVector
+        if (reg_IF[0]) interrupt_vector = 8'h40;
+        else if (reg_IF[1]) interrupt_vector = 8'h48;
+        else if (reg_IF[2]) interrupt_vector = 8'h50;
+        else if (reg_IF[3]) interrupt_vector = 8'h58;
+        else if (reg_IF[4]) interrupt_vector = 8'h60;
+        else interrupt_vector = 8'h00;
+    end : getInterruptVector
 
     // If an instruction had a condition code, we need to check if it was met
     function automatic logic conditionCheck(condition_code_t cc, alu_flags_t flags);
@@ -129,7 +148,7 @@ module gb_cpu (
         .reset(reset),
         .alu_req(curr_controls.alu_destination),
         .alu_data(alu_o),
-        .alu_flags(alu_flags_o),
+        .alu_flags(curr_controls.add_adj ? alu_flags_i : alu_flags_o),
         .alu_wren(curr_controls.alu_wren),
         .idu_req(curr_controls.idu_destination),
         .idu_data(idu_o),
@@ -138,7 +157,10 @@ module gb_cpu (
         .data_bus_data(data_i),
         .data_bus_wren(curr_controls.receive_data_bus),
         .set_adj(curr_controls.set_adj),
-        .overwrite_sp(curr_controls.overwrite_sp),
+        .overwrite_req(curr_controls.overwrite_req),
+        .overwrite_wren(curr_controls.overwrite_wren),
+        .write_interrupt_vector(curr_controls.write_interrupt_vector),
+        .interrupt_vector(interrupt_vector),
         .registers(registers)
     );
 
@@ -146,6 +168,7 @@ module gb_cpu (
     gb_cpu_decoder gbDecoder (
         .opcode(registers.ir),
         .cb_prefix(cb_prefix),
+        .isr_cmd(isr_cmd),
         .schedule(schedule)
     );
 
@@ -156,9 +179,11 @@ module gb_cpu (
         .schedule(schedule),
         .curr_m_cycle(curr_m_cycle),
         .cond_not_met(cond_not_met),
+        .interrupt_queued(interrupt_queued),
         .control_next(curr_controls),
         .next_m_cycle(curr_m_cycle),
-        .cb_prefix_o(cb_prefix)
+        .cb_prefix_o(cb_prefix),
+        .isr_cmd(isr_cmd)
     );
 
     // ALU
