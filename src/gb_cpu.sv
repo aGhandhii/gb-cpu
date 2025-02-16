@@ -5,6 +5,8 @@ Inputs:
     clk     - Machine (M) Clock
     reset   - System Reset
     data_i  - Incoming Data Bus
+    reg_IF  - Interrupt Flag Register
+    reg_IE  - Interrupt Enable Register
 
 Outputs:
     addr_o  - Outgoing Address Bus
@@ -16,6 +18,8 @@ module gb_cpu (
     input  logic        clk,
     input  logic        reset,
     input  logic [ 7:0] data_i,
+    input  logic [ 7:0] reg_IF,
+    input  logic [ 7:0] reg_IE,
     output logic [15:0] addr_o,
     output logic [ 7:0] data_o,
     output logic        drive_data_bus
@@ -59,7 +63,6 @@ module gb_cpu (
     always_comb begin : aluInputs
         if (schedule.bit_cmd) begin
             // pass sign-extended 'bit' value as operand_b
-            // this is in IR[5:3], so op_b = {5'b00000, IR[5:3]}
             alu_instruction.operand_a = getRegister8(registers, curr_controls.alu_operand_a_register);
             alu_instruction.operand_b = {5'b00000, registers.ir[5:3]};
         end else if (curr_controls.rst_cmd) begin
@@ -77,11 +80,11 @@ module gb_cpu (
         end
     end : aluInputs
 
-    // Handle IME
+    // Handle IME register
     logic enable_interrupts_delayed;
     always_ff @(posedge clk) begin
         enable_interrupts_delayed <= curr_controls.enable_interrupts;
-        if (reset) IME <= 1'b1;
+        if (reset) IME <= 1'b0;
         else if (curr_controls.disable_interrupts) IME <= 1'b0;
         else if (enable_interrupts_delayed) IME <= 1'b1;
         else IME <= IME;

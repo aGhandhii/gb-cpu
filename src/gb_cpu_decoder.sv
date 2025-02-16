@@ -26,11 +26,11 @@ module gb_cpu_decoder (
         if (cb_prefix == 1'b0) begin
             case (opcode) inside
 
-                //8'b00_000000: $display("No Op");
-                //8'b00_??_0001: $display("ld  r16, imm16");
-                //8'b00_??_0010: $display("ld  [r16mem], a");
-                //8'b00_??_1010: $display("ld  a, [r16mem]");
-                //8'b00_001000: $display("ld  [imm16], sp");
+                //8'b00_000000: // No Op
+                //8'b00_??_0001: // ld  r16, imm16
+                //8'b00_??_0010: // ld  [r16mem], a
+                //8'b00_??_1010: // ld  a, [r16mem]
+                //8'b00_001000: // ld  [imm16], sp
                 8'b00_??_0011: schedule = arithmetic16Bit(.incDec(1'b1), .r16(opcode_r16_t'(opcode[5:4])));  // inc r16
                 8'b00_??_1011: schedule = arithmetic16Bit(.incDec(1'b0), .r16(opcode_r16_t'(opcode[5:4])));  // dec r16
                 8'b00_??_1001:
@@ -39,22 +39,22 @@ module gb_cpu_decoder (
                 schedule = arithmetic8Bit(.alu_opcode(INC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // inc r8
                 8'b00_???_101:
                 schedule = arithmetic8Bit(.alu_opcode(DEC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // dec r8
-                //8'b00_???110: $display("ld  r8 imm8");
-                //8'b00_000111: $display("rlca");
-                //8'b00_001111: $display("rrca");
-                //8'b00_010111: $display("rla");
-                //8'b00_011111: $display("rra");
+                //8'b00_???110: // ld  r8 imm8
+                //8'b00_000111: // rlca
+                //8'b00_001111: // rrca
+                //8'b00_010111: // rla
+                //8'b00_011111: // rra
                 8'b00_100111: schedule = arithmetic8Bit(.alu_opcode(DAA), .writeResult(1'b0));  // daa
                 8'b00_101111: schedule = arithmetic8Bit(.alu_opcode(CPL), .writeResult(1'b0));  // cpl
                 8'b00_110111: schedule = arithmetic8Bit(.alu_opcode(SCF), .writeResult(1'b0));  // scf
                 8'b00_111111: schedule = arithmetic8Bit(.alu_opcode(CCF), .writeResult(1'b0));  // ccf
-                //8'b00_011000: $display("jr  imm8");
-                //8'b00_1??000: $display("jr  cond, imm8");
-                //8'b00_010000: $display("stop");
+                //8'b00_011000: // jr  imm8
+                //8'b00_1??000: // jr  cond, imm8
+                //8'b00_010000: // stop
 
                 //8'b01_??????: begin
-                //    if (opcode == 8'b01_110110) $display("halt");
-                //    else $display("ld r8, r8");
+                //    if (opcode == 8'b01_110110) // halt
+                //    else // ld r8, r8
                 //end
 
                 8'b10_000_???:
@@ -81,44 +81,44 @@ module gb_cpu_decoder (
                 8'b11_110_110: schedule = arithmetic8Bit(.alu_opcode(OR), .immediate_op(1'b1));  // or  a, imm8
                 8'b11_111_110: schedule = arithmetic8Bit(.alu_opcode(CP), .immediate_op(1'b1));  // cp  a, imm8
 
-                //8'b11_0??000: $display("ret cond");
-                //8'b11_001001: $display("ret");
-                //8'b11_011001: $display("reti");
-                //8'b11_0??010: $display("jp  cond, imm16");
-                //8'b11_000011: $display("jp  imm16");
-                //8'b11_101001: $display("jp  hl");
-                //8'b11_0??100: $display("call cond, imm16");
-                //8'b11_001101: $display("call imm16");
-                //8'b11_???111: $display("rst tgt3");
+                //8'b11_0??000: // ret cond
+                //8'b11_001001: // ret
+                //8'b11_011001: // reti
+                //8'b11_0??010: // jp  cond, imm16
+                //8'b11_000011: // jp  imm16
+                //8'b11_101001: // jp  hl
+                //8'b11_0??100: // call cond, imm16
+                //8'b11_001101: // call imm16
+                //8'b11_???111: // rst tgt3
 
-                //8'b11_??0001: $display("pop r16stk");
-                //8'b11_??0101: $display("push r16stk");
+                //8'b11_??0001: // pop r16stk
+                //8'b11_??0101: // push r16stk
 
-                //8'b111_0001_0: $display("ldh [c], a");
-                //8'b111_0000_0: $display("ldh [imm8], a");
-                //8'b111_0101_0: $display("ld  [imm16], a");
-                //8'b111_1001_0: $display("ldh a, [c]");
-                //8'b111_1000_0: $display("ldh a, [imm8]");
-                //8'b111_1101_0: $display("ld  a, [imm16]");
+                //8'b111_0001_0: // ldh [c], a
+                //8'b111_0000_0: // ldh [imm8], a
+                //8'b111_0101_0: // ld  [imm16], a
+                //8'b111_1001_0: // ldh a, [c]
+                //8'b111_1000_0: // ldh a, [imm8]
+                //8'b111_1101_0: // ld  a, [imm16]
 
                 8'b11_101000: schedule = arithmetic16Bit(.addSP(1'b1));  // add sp, imm8
-                //8'b11_111000: $display("ld  hl, sp + imm8");
-                //8'b11_111001: $display("ld  sp, hl");
+                //8'b11_111000: // ld  hl, sp + imm8
+                //8'b11_111001: // ld  sp, hl
 
-                //8'b11_110011: $display("di");
-                //8'b11_111011: $display("ei");
+                //8'b11_110011: // di
+                //8'b11_111011: // ei
 
-                //8'hD3: $display("Hard Lock");
-                //8'hDB: $display("Hard Lock");
-                //8'hDD: $display("Hard Lock");
-                //8'hE3: $display("Hard Lock");
-                //8'hE4: $display("Hard Lock");
-                //8'hEB: $display("Hard Lock");
-                //8'hEC: $display("Hard Lock");
-                //8'hED: $display("Hard Lock");
-                //8'hF4: $display("Hard Lock");
-                //8'hFC: $display("Hard Lock");
-                //8'hFD: $display("Hard Lock");
+                //8'hD3: // Hard Lock
+                //8'hDB: // Hard Lock
+                //8'hDD: // Hard Lock
+                //8'hE3: // Hard Lock
+                //8'hE4: // Hard Lock
+                //8'hEB: // Hard Lock
+                //8'hEC: // Hard Lock
+                //8'hED: // Hard Lock
+                //8'hF4: // Hard Lock
+                //8'hFC: // Hard Lock
+                //8'hFD: // Hard Lock
 
                 default: schedule = emptySchedule();
 
@@ -128,18 +128,18 @@ module gb_cpu_decoder (
             // 0xCB prefixed operations
             case (opcode) inside
 
-                //8'b00_000_???: $display("rlc r8");
-                //8'b00_001_???: $display("rrc r8");
-                //8'b00_010_???: $display("rl  r8");
-                //8'b00_011_???: $display("rr  r8");
-                //8'b00_100_???: $display("sla r8");
-                //8'b00_101_???: $display("sra r8");
-                //8'b00_110_???: $display("swap r8");
-                //8'b00_111_???: $display("srl r8");
+                //8'b00_000_???: // rlc r8
+                //8'b00_001_???: // rrc r8
+                //8'b00_010_???: // rl  r8
+                //8'b00_011_???: // rr  r8
+                //8'b00_100_???: // sla r8
+                //8'b00_101_???: // sra r8
+                //8'b00_110_???: // swap r8
+                //8'b00_111_???: // srl r8
 
-                //8'b01_???_???: $display("bit b3, r8");
-                //8'b10_???_???: $display("res b3, r8");
-                //8'b11_???_???: $display("set b3, r8");
+                //8'b01_???_???: // bit b3, r8
+                //8'b10_???_???: // res b3, r8
+                //8'b11_???_???: // set b3, r8
 
                 default: schedule = emptySchedule();
 

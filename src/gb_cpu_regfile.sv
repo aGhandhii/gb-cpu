@@ -75,7 +75,10 @@ module gb_cpu_regfile (
     assign flagRegNext = {alu_flags.Z, alu_flags.N, alu_flags.H, alu_flags.C, 4'h0};
 
     // Reduce redundancy, takes ALU and IDU requests then returns the output
-    // if either request overwrites the existing value
+    // if either request overwrites the existing value.
+    // In hardware, this creates a priority scheme - we implement it with the
+    // ALU at the highest level: in practice, there should never be multiple
+    // drive requests at a time
     function automatic logic [7:0] setNegedgeValue(
         logic [7:0] data_in, regfile_r8_t r8, logic [7:0] data_a, regfile_r8_t r8_a, logic wren_a, logic [7:0] data_b,
         regfile_r8_t r8_b, logic wren_b, logic [7:0] data_c, regfile_r8_t r8_c, logic wren_c);
@@ -85,7 +88,7 @@ module gb_cpu_regfile (
         else return data_in;
     endfunction : setNegedgeValue
 
-    // Handle resets, data bus, and special operations
+    // Handle resets, data bus writes, and special operations
     always_ff @(posedge clk) begin
         if (reset) begin
             registers.a      <= 8'd0;
@@ -97,7 +100,6 @@ module gb_cpu_regfile (
             registers.h      <= 8'd0;
             registers.l      <= 8'd0;
             registers.ir     <= 8'd0;
-            registers.ie     <= 8'd0;
             registers.sp_lo  <= 8'd0;
             registers.sp_hi  <= 8'd0;
             registers.pc_lo  <= 8'hFF;
@@ -114,7 +116,6 @@ module gb_cpu_regfile (
             registers.h      <= registers.h;
             registers.l      <= registers.l;
             registers.ir     <= ((data_bus_req == REG_IR) && data_bus_wren) ? data_bus_data : registers.ir;
-            registers.ie     <= registers.ie;  // FIXME
             registers.sp_lo  <= overwrite_sp ? registers.tmp_lo : registers.sp_lo;
             registers.sp_hi  <= overwrite_sp ? registers.tmp_hi : registers.sp_hi;
             registers.pc_lo  <= registers.pc_lo;
@@ -125,7 +126,7 @@ module gb_cpu_regfile (
         end
     end
 
-    // Handle ALU and IDU writes
+    // Handle ALU and IDU write requests
     always_ff @(negedge clk) begin
         /* verilog_format: off */
         registers.a         <= setNegedgeValue(registers.a,      REG_A,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
@@ -140,7 +141,6 @@ module gb_cpu_regfile (
         registers.h         <= setNegedgeValue(registers.h,      REG_H,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.l         <= setNegedgeValue(registers.l,      REG_L,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.ir        <= setNegedgeValue(registers.ir,     REG_IR,    alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
-        registers.ie        <= setNegedgeValue(registers.ie,     REG_IE,    alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.sp_lo     <= setNegedgeValue(registers.sp_lo,  REG_SP_L,  alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.sp_hi     <= setNegedgeValue(registers.sp_hi,  REG_SP_H,  alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.pc_lo     <= setNegedgeValue(registers.pc_lo,  REG_PC_L,  alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);

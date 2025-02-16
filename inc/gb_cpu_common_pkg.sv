@@ -79,7 +79,6 @@ package gb_cpu_common_pkg;
         logic [7:0] h;
         logic [7:0] l;
         logic [7:0] ir;
-        logic [7:0] ie;
         logic [7:0] sp_lo;
         logic [7:0] sp_hi;
         logic [7:0] pc_lo;
@@ -88,7 +87,6 @@ package gb_cpu_common_pkg;
         logic [7:0] tmp_hi;
     } regfile_t;
 
-    // IE is memory-mapped to 0xFFFF but is located within the core
     // IR stores the current instruction
     typedef enum logic [3:0] {
         REG_A,
@@ -100,7 +98,6 @@ package gb_cpu_common_pkg;
         REG_H,
         REG_L,
         REG_IR,
-        REG_IE,
         REG_SP_L,
         REG_SP_H,
         REG_PC_L,
@@ -159,7 +156,6 @@ package gb_cpu_common_pkg;
             REG_H:     return registers.h;
             REG_L:     return registers.l;
             REG_IR:    return registers.ir;
-            REG_IE:    return registers.ie;
             REG_SP_L:  return registers.sp_lo;
             REG_SP_H:  return registers.sp_hi;
             REG_PC_L:  return registers.pc_lo;

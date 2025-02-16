@@ -98,6 +98,10 @@ package gb_cpu_decoder_pkg;
 
     // }}}
 
+    // INTERRUPT SERVICE ROUTINE (ISR) {{{
+
+    // }}}
+
     // 8-BIT LOAD INSTRUCTIONS {{{
 
     // }}}
