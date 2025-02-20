@@ -16,7 +16,31 @@ module gb_cpu_decoder_tb ();
         $dumpvars();
 
         cb_prefix = 1'b0;
+        isr_cmd = 1'b0;
 
+        //// ld b imm8
+        //opcode = 8'b00_000_110;
+        //#1;
+
+        //// ld [hl] imm8
+        //opcode = 8'b00_110_110;
+        //#1;
+
+        //// ld [imm8] a
+        //opcode = 8'b111_0101_0;
+        //#1;
+
+        //// ld a [imm8]
+        //opcode = 8'b111_1101_0;
+        //#1;
+
+        // ldh [imm8] a
+        opcode = 8'b111_0000_0;
+        #1;
+
+        // ldh a [imm8]
+        opcode = 8'b111_1000_0;
+        #1;
 
         //// xor a e
         //opcode    = 8'b10_101_011;
@@ -46,8 +70,8 @@ module gb_cpu_decoder_tb ();
         //opcode = 8'b11_101000;
         //#1;
 
-        isr_cmd   = 1'b1;
-        #1;
+        //isr_cmd   = 1'b1;
+        //#1;
 
         $finish();
     end

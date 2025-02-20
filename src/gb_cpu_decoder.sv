@@ -25,6 +25,7 @@ module gb_cpu_decoder (
 
     always_comb begin : decoderCombinationalLogic
 
+        /* verilog_format: off */
         if (isr_cmd) begin
 
             // Schedule the ISR
@@ -35,18 +36,38 @@ module gb_cpu_decoder (
 
                 //8'b00_000000: // No Op
                 //8'b00_??_0001: // ld  r16, imm16
-                //8'b00_??_0010: // ld  [r16mem], a
-                //8'b00_??_1010: // ld  a, [r16mem]
+                // TODO: TEST THIS
+                8'b00_??_0010: begin
+                    // Add a check for indirect inc/dec HL
+                    if (opcode[5:4] == 2'd2)
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectInc(1'b1)); // ld  [hli], a
+                    else if (opcode[5:4] == 2'd3)
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectDec(1'b1)); // ld  [hld], a
+                    else
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4]))); // ld  [r16mem], a
+                end
+                // TODO: TEST THIS
+                8'b00_??_1010: begin
+                    // Add a check for indirect inc/dec HL
+                    if (opcode[5:4] == 2'd2)
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectInc(1'b1), .writeToMem(1'b1)); // ld a, [hli]
+                    else if (opcode[5:4] == 2'd3)
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectDec(1'b1), .writeToMem(1'b1)); // ld a, [hld]
+                    else
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .writeToMem(1'b1)); // ld a, [r16mem]
+                end
                 //8'b00_001000: // ld  [imm16], sp
                 8'b00_??_0011: schedule = arithmetic16Bit(.incDec(1'b1), .r16(opcode_r16_t'(opcode[5:4])));  // inc r16
                 8'b00_??_1011: schedule = arithmetic16Bit(.incDec(1'b0), .r16(opcode_r16_t'(opcode[5:4])));  // dec r16
-                8'b00_??_1001:
-                schedule = arithmetic16Bit(.addHL(1'b1), .r16(opcode_r16_t'(opcode[5:4])));  // add hl, r16
-                8'b00_???_100:
-                schedule = arithmetic8Bit(.alu_opcode(INC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // inc r8
-                8'b00_???_101:
-                schedule = arithmetic8Bit(.alu_opcode(DEC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // dec r8
-                //8'b00_???110: // ld  r8 imm8
+                8'b00_??_1001: schedule = arithmetic16Bit(.addHL(1'b1),  .r16(opcode_r16_t'(opcode[5:4])));  // add hl, r16
+                8'b00_???_100: schedule = arithmetic8Bit(.alu_opcode(INC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // inc r8
+                8'b00_???_101: schedule = arithmetic8Bit(.alu_opcode(DEC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // dec r8
+                8'b00_???_110: begin
+                    if (opcode[5:3] == 3'd6)
+                        schedule = load8Bit(.immediate(1'b1), .writeToMem(1'b1)); // ld [hl] imm8
+                    else
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[5:3])), .immediate(1'b1)); // ld  r8 imm8
+                end
                 //8'b00_000111: // rlca
                 //8'b00_001111: // rrca
                 //8'b00_010111: // rla
@@ -59,25 +80,28 @@ module gb_cpu_decoder (
                 //8'b00_1??000: // jr  cond, imm8
                 //8'b00_010000: // stop
 
-                //8'b01_??????: begin
-                //    if (opcode == 8'b01_110110) // halt
-                //    else // ld r8, r8
-                //end
+                // TODO: TEST THESE
+                8'b01_???_???: begin
+                    if (opcode == 8'b01_110_110)
+                        schedule = emptySchedule(); // halt TODO
+                    else begin
+                        // first reg is [HL]
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[2:0])), .addrReg(opcode_r16mem_t'(2'b10))); // ld [hl], r8
+                        // second reg is [HL]
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[5:3])), .addrReg(opcode_r16mem_t'(2'b10)), .writeToMem(1'b1)); // ld r8, [hl]
+                        // other cases
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[5:3])), .otherReg(opcode_r8_t'(opcode[2:0])), .regToReg(1'b1)); // ld r8, r8
+                    end
+                end
 
-                8'b10_000_???:
-                schedule = arithmetic8Bit(.alu_opcode(ADD), .r8(opcode_r8_t'(opcode[2:0])));  // add a, r8
-                8'b10_001_???:
-                schedule = arithmetic8Bit(.alu_opcode(ADC), .r8(opcode_r8_t'(opcode[2:0])));  // adc a, r8
-                8'b10_010_???:
-                schedule = arithmetic8Bit(.alu_opcode(SUB), .r8(opcode_r8_t'(opcode[2:0])));  // sub a, r8
-                8'b10_011_???:
-                schedule = arithmetic8Bit(.alu_opcode(SBC), .r8(opcode_r8_t'(opcode[2:0])));  // sbc a, r8
-                8'b10_100_???:
-                schedule = arithmetic8Bit(.alu_opcode(AND), .r8(opcode_r8_t'(opcode[2:0])));  // and a, r8
-                8'b10_101_???:
-                schedule = arithmetic8Bit(.alu_opcode(XOR), .r8(opcode_r8_t'(opcode[2:0])));  // xor a, r8
-                8'b10_110_???: schedule = arithmetic8Bit(.alu_opcode(OR), .r8(opcode_r8_t'(opcode[2:0])));  // or  a, r8
-                8'b10_111_???: schedule = arithmetic8Bit(.alu_opcode(CP), .r8(opcode_r8_t'(opcode[2:0])));  // cp  a, r8
+                8'b10_000_???: schedule = arithmetic8Bit(.alu_opcode(ADD), .r8(opcode_r8_t'(opcode[2:0])));  // add a, r8
+                8'b10_001_???: schedule = arithmetic8Bit(.alu_opcode(ADC), .r8(opcode_r8_t'(opcode[2:0])));  // adc a, r8
+                8'b10_010_???: schedule = arithmetic8Bit(.alu_opcode(SUB), .r8(opcode_r8_t'(opcode[2:0])));  // sub a, r8
+                8'b10_011_???: schedule = arithmetic8Bit(.alu_opcode(SBC), .r8(opcode_r8_t'(opcode[2:0])));  // sbc a, r8
+                8'b10_100_???: schedule = arithmetic8Bit(.alu_opcode(AND), .r8(opcode_r8_t'(opcode[2:0])));  // and a, r8
+                8'b10_101_???: schedule = arithmetic8Bit(.alu_opcode(XOR), .r8(opcode_r8_t'(opcode[2:0])));  // xor a, r8
+                8'b10_110_???: schedule = arithmetic8Bit(.alu_opcode(OR),  .r8(opcode_r8_t'(opcode[2:0])));  // or  a, r8
+                8'b10_111_???: schedule = arithmetic8Bit(.alu_opcode(CP),  .r8(opcode_r8_t'(opcode[2:0])));  // cp  a, r8
 
                 8'b11_000_110: schedule = arithmetic8Bit(.alu_opcode(ADD), .immediate_op(1'b1));  // add a, imm8
                 8'b11_001_110: schedule = arithmetic8Bit(.alu_opcode(ADC), .immediate_op(1'b1));  // adc a, imm8
@@ -85,8 +109,8 @@ module gb_cpu_decoder (
                 8'b11_011_110: schedule = arithmetic8Bit(.alu_opcode(SBC), .immediate_op(1'b1));  // sbc a, imm8
                 8'b11_100_110: schedule = arithmetic8Bit(.alu_opcode(AND), .immediate_op(1'b1));  // and a, imm8
                 8'b11_101_110: schedule = arithmetic8Bit(.alu_opcode(XOR), .immediate_op(1'b1));  // xor a, imm8
-                8'b11_110_110: schedule = arithmetic8Bit(.alu_opcode(OR), .immediate_op(1'b1));  // or  a, imm8
-                8'b11_111_110: schedule = arithmetic8Bit(.alu_opcode(CP), .immediate_op(1'b1));  // cp  a, imm8
+                8'b11_110_110: schedule = arithmetic8Bit(.alu_opcode(OR),  .immediate_op(1'b1));  // or  a, imm8
+                8'b11_111_110: schedule = arithmetic8Bit(.alu_opcode(CP),  .immediate_op(1'b1));  // cp  a, imm8
 
                 //8'b11_0??000: // ret cond
                 //8'b11_001001: // ret
@@ -101,12 +125,14 @@ module gb_cpu_decoder (
                 //8'b11_??0001: // pop r16stk
                 //8'b11_??0101: // push r16stk
 
-                //8'b111_0001_0: // ldh [c], a
-                //8'b111_0000_0: // ldh [imm8], a
-                //8'b111_0101_0: // ld  [imm16], a
-                //8'b111_1001_0: // ldh a, [c]
-                //8'b111_1000_0: // ldh a, [imm8]
-                //8'b111_1101_0: // ld  a, [imm16]
+                // TODO: TEST THIS
+                8'b111_0001_0: schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .offsetAddr(1'b1)); // ldh [c], a
+                8'b111_0000_0: schedule = load8Bit(.direct(1'b1), .offsetAddr(1'b1)); // ldh [imm8], a
+                8'b111_0101_0: schedule = load8Bit(.direct(1'b1)); // ld  [imm16], a
+                // TODO: TEST THIS
+                8'b111_1001_0: schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .offsetAddr(1'b1), .writeToMem(1'b1)); // ldh a, [c]
+                8'b111_1000_0: schedule = load8Bit(.direct(1'b1), .writeToMem(1'b1), .offsetAddr(1'b1)); // ldh a, [imm8]
+                8'b111_1101_0: schedule = load8Bit(.direct(1'b1), .writeToMem(1'b1)); // ld  a, [imm16]
 
                 8'b11_101000: schedule = arithmetic16Bit(.addSP(1'b1));  // add sp, imm8
                 //8'b11_111000: // ld  hl, sp + imm8
@@ -152,6 +178,7 @@ module gb_cpu_decoder (
 
             endcase
         end
+        /* verilog_format: on */
 
     end : decoderCombinationalLogic
 
