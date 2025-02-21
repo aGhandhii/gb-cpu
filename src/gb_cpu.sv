@@ -74,9 +74,9 @@ module gb_cpu (
             alu_instruction.operand_a = {2'b00, registers.ir[5:3], 3'b000};
             alu_instruction.operand_b = getRegister8(registers, curr_controls.alu_operand_b_register);
         end else if (curr_controls.alu_inc_dec) begin
-            // pass ALU operand b as operand a, and 8'd1 as operand_b
+            // pass ALU operand b as operand a; the other operand is irrelevant
             alu_instruction.operand_a = getRegister8(registers, curr_controls.alu_operand_b_register);
-            alu_instruction.operand_b = 8'd1;
+            alu_instruction.operand_b = 8'hxx;
         end else begin
             alu_instruction.operand_a = getRegister8(registers, curr_controls.alu_operand_a_register);
             alu_instruction.operand_b = getRegister8(registers, curr_controls.alu_operand_b_register);

@@ -31,30 +31,48 @@ module gb_cpu_decoder (
             // Schedule the ISR
             schedule = interruptServiceRoutine();
 
-        end else if (cb_prefix == 1'b0) begin
+        end else if (cb_prefix) begin
+
+            // 0xCB prefixed operations
+            case (opcode) inside
+
+                //8'b00_000_???: // rlc r8
+                //8'b00_001_???: // rrc r8
+                //8'b00_010_???: // rl  r8
+                //8'b00_011_???: // rr  r8
+                //8'b00_100_???: // sla r8
+                //8'b00_101_???: // sra r8
+                //8'b00_110_???: // swap r8
+                //8'b00_111_???: // srl r8
+
+                //8'b01_???_???: // bit b3, r8
+                //8'b10_???_???: // res b3, r8
+                //8'b11_???_???: // set b3, r8
+
+                default: schedule = emptySchedule();
+
+            endcase
+
+        end else begin
             case (opcode) inside
 
                 //8'b00_000000: // No Op
                 //8'b00_??_0001: // ld  r16, imm16
-                // TODO: TEST THIS
                 8'b00_??_0010: begin
-                    // Add a check for indirect inc/dec HL
                     if (opcode[5:4] == 2'd2)
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectInc(1'b1)); // ld  [hli], a
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectInc(1'b1), .writeToMem(1'b1)); // ld  [hli], a
                     else if (opcode[5:4] == 2'd3)
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectDec(1'b1)); // ld  [hld], a
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectDec(1'b1), .writeToMem(1'b1)); // ld  [hld], a
                     else
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4]))); // ld  [r16mem], a
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .writeToMem(1'b1)); // ld  [r16mem], a
                 end
-                // TODO: TEST THIS
                 8'b00_??_1010: begin
-                    // Add a check for indirect inc/dec HL
                     if (opcode[5:4] == 2'd2)
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectInc(1'b1), .writeToMem(1'b1)); // ld a, [hli]
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectInc(1'b1)); // ld a, [hli]
                     else if (opcode[5:4] == 2'd3)
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectDec(1'b1), .writeToMem(1'b1)); // ld a, [hld]
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectDec(1'b1)); // ld a, [hld]
                     else
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .writeToMem(1'b1)); // ld a, [r16mem]
+                        schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4]))); // ld a, [r16mem]
                 end
                 //8'b00_001000: // ld  [imm16], sp
                 8'b00_??_0011: schedule = arithmetic16Bit(.incDec(1'b1), .r16(opcode_r16_t'(opcode[5:4])));  // inc r16
@@ -80,17 +98,19 @@ module gb_cpu_decoder (
                 //8'b00_1??000: // jr  cond, imm8
                 //8'b00_010000: // stop
 
-                // TODO: TEST THESE
                 8'b01_???_???: begin
                     if (opcode == 8'b01_110_110)
                         schedule = emptySchedule(); // halt TODO
                     else begin
                         // first reg is [HL]
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[2:0])), .addrReg(opcode_r16mem_t'(2'b10))); // ld [hl], r8
+                        if (opcode[5:3] == 3'd6)
+                            schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[2:0])), .addrReg(opcode_r16mem_t'(2'b10)), .writeToMem(1'b1)); // ld [hl], r8
                         // second reg is [HL]
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[5:3])), .addrReg(opcode_r16mem_t'(2'b10)), .writeToMem(1'b1)); // ld r8, [hl]
+                        else if (opcode[2:0] == 3'd6)
+                            schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[5:3])), .addrReg(opcode_r16mem_t'(2'b10))); // ld r8, [hl]
                         // other cases
-                        schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[5:3])), .otherReg(opcode_r8_t'(opcode[2:0])), .regToReg(1'b1)); // ld r8, r8
+                        else
+                            schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[5:3])), .otherReg(opcode_r8_t'(opcode[2:0])), .regToReg(1'b1)); // ld r8, r8
                     end
                 end
 
@@ -125,14 +145,12 @@ module gb_cpu_decoder (
                 //8'b11_??0001: // pop r16stk
                 //8'b11_??0101: // push r16stk
 
-                // TODO: TEST THIS
-                8'b111_0001_0: schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .offsetAddr(1'b1)); // ldh [c], a
-                8'b111_0000_0: schedule = load8Bit(.direct(1'b1), .offsetAddr(1'b1)); // ldh [imm8], a
-                8'b111_0101_0: schedule = load8Bit(.direct(1'b1)); // ld  [imm16], a
-                // TODO: TEST THIS
-                8'b111_1001_0: schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .offsetAddr(1'b1), .writeToMem(1'b1)); // ldh a, [c]
-                8'b111_1000_0: schedule = load8Bit(.direct(1'b1), .writeToMem(1'b1), .offsetAddr(1'b1)); // ldh a, [imm8]
-                8'b111_1101_0: schedule = load8Bit(.direct(1'b1), .writeToMem(1'b1)); // ld  a, [imm16]
+                8'b111_0001_0: schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .writeToMem(1'b1), .offsetAddr(1'b1)); // ldh [c], a
+                8'b111_0000_0: schedule = load8Bit(.direct(1'b1), .writeToMem(1'b1), .offsetAddr(1'b1)); // ldh [imm8], a
+                8'b111_0101_0: schedule = load8Bit(.direct(1'b1), .writeToMem(1'b1)); // ld  [imm16], a
+                8'b111_1001_0: schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .offsetAddr(1'b1)); // ldh a, [c]
+                8'b111_1000_0: schedule = load8Bit(.direct(1'b1), .offsetAddr(1'b1)); // ldh a, [imm8]
+                8'b111_1101_0: schedule = load8Bit(.direct(1'b1)); // ld  a, [imm16]
 
                 8'b11_101000: schedule = arithmetic16Bit(.addSP(1'b1));  // add sp, imm8
                 //8'b11_111000: // ld  hl, sp + imm8
@@ -157,26 +175,6 @@ module gb_cpu_decoder (
 
             endcase
 
-        end else begin
-            // 0xCB prefixed operations
-            case (opcode) inside
-
-                //8'b00_000_???: // rlc r8
-                //8'b00_001_???: // rrc r8
-                //8'b00_010_???: // rl  r8
-                //8'b00_011_???: // rr  r8
-                //8'b00_100_???: // sla r8
-                //8'b00_101_???: // sra r8
-                //8'b00_110_???: // swap r8
-                //8'b00_111_???: // srl r8
-
-                //8'b01_???_???: // bit b3, r8
-                //8'b10_???_???: // res b3, r8
-                //8'b11_???_???: // set b3, r8
-
-                default: schedule = emptySchedule();
-
-            endcase
         end
         /* verilog_format: on */
 

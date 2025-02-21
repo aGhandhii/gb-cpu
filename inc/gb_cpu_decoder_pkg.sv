@@ -137,7 +137,7 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[1].addr_bus_source_r8     = regfile_r8_t'(4'hx);
         schedule.instruction_controls[1].addr_bus_source_r16    = REG_SP;
         schedule.instruction_controls[1].data_bus_i_destination = regfile_r8_t'(4'hx);
-        schedule.instruction_controls[1].data_bus_o_source      = REG_SP_H;
+        schedule.instruction_controls[1].data_bus_o_source      = REG_PC_H;
         schedule.instruction_controls[1].drive_data_bus         = 1'b1;
         schedule.instruction_controls[1].receive_data_bus       = 1'b0;
         schedule.instruction_controls[1].idu_opcode             = IDU_DEC;
@@ -165,7 +165,7 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[2].addr_bus_source_r8     = regfile_r8_t'(4'hx);
         schedule.instruction_controls[2].addr_bus_source_r16    = REG_SP;
         schedule.instruction_controls[2].data_bus_i_destination = regfile_r8_t'(4'hx);
-        schedule.instruction_controls[2].data_bus_o_source      = REG_SP_L;
+        schedule.instruction_controls[2].data_bus_o_source      = REG_PC_L;
         schedule.instruction_controls[2].drive_data_bus         = 1'b1;
         schedule.instruction_controls[2].receive_data_bus       = 1'b0;
         schedule.instruction_controls[2].idu_opcode             = IDU_NOP;
@@ -748,7 +748,9 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[4] = blankSchedule.instruction_controls[4];
             schedule.instruction_controls[5] = blankSchedule.instruction_controls[5];
         end
+
         return schedule;
+
     endfunction : load8Bit
 
     // }}}

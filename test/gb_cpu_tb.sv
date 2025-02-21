@@ -24,7 +24,9 @@ module gb_cpu_tb ();
     assign memory[4] = 8'b00_01_0011;  // inc de
     assign memory[5] = 8'b00_01_0011;  // inc de
     assign memory[6] = 8'b00_01_1011;  // dec de
-    assign memory[7] = 8'b10_100_000;  // and a b
+    assign memory[7] = 8'b00_001_110;  // ld c imm8
+    assign memory[8] = 8'hCC;
+    assign memory[9] = 8'b01_000_001;  // ld b c
 
     initial begin
         clk = 1'b0;
@@ -40,7 +42,7 @@ module gb_cpu_tb ();
         #1;
         reset = 1'b0;
 
-        repeat (15) begin
+        repeat (20) begin
             #1;
             @(posedge clk);
             #1;
