@@ -74,16 +74,40 @@ module gb_cpu_decoder_tb ();
         //opcode = 8'b00_00_1010;
         //#1;
 
-        // ld [hl] d
-        opcode = 8'b01_110_010;
+        //// ld [hl] d
+        //opcode = 8'b01_110_010;
+        //#1;
+
+        //// ld c [hl]
+        //opcode = 8'b01_001_110;
+        //#1;
+
+        //// ld c h
+        //opcode = 8'b01_001_100;
+        //#1;
+
+        //// ld de imm16
+        //opcode = 8'b00_01_0001;
+        //#1;
+
+        //// ld [imm16] sp
+        //opcode = 8'b00_001000;
+        //#1;
+
+        //// pop de
+        //opcode = 8'b11_01_0001;
+        //#1;
+
+        //// push bc
+        //opcode = 8'b11_00_0101;
+        //#1;
+
+        // ld hl, sp+e
+        opcode = 8'b11_111000;
         #1;
 
-        // ld c [hl]
-        opcode = 8'b01_001_110;
-        #1;
-
-        // ld c h
-        opcode = 8'b01_001_100;
+        // ld sp, hl
+        opcode = 8'b11_111001;
         #1;
 
         //// xor a e

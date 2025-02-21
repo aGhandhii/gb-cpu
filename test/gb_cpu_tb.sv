@@ -17,16 +17,26 @@ module gb_cpu_tb ();
     logic [7:0] memory[65536];
     assign data_i = memory[addr_o];
 
-    assign memory[0] = 8'b11_000_110;  // add a, imm8
-    assign memory[1] = 8'h05;
-    assign memory[2] = 8'b11_010_110;  // sub a, imm8
-    assign memory[3] = 8'h02;
-    assign memory[4] = 8'b00_01_0011;  // inc de
-    assign memory[5] = 8'b00_01_0011;  // inc de
-    assign memory[6] = 8'b00_01_1011;  // dec de
-    assign memory[7] = 8'b00_001_110;  // ld c imm8
-    assign memory[8] = 8'hCC;
-    assign memory[9] = 8'b01_000_001;  // ld b c
+    //assign memory[0] = 8'b11_000_110;  // add a, imm8
+    //assign memory[1] = 8'h05;
+    //assign memory[2] = 8'b11_010_110;  // sub a, imm8
+    //assign memory[3] = 8'h02;
+    //assign memory[4] = 8'b00_01_0011;  // inc de
+    //assign memory[5] = 8'b00_01_0011;  // inc de
+    //assign memory[6] = 8'b00_01_1011;  // dec de
+    //assign memory[7] = 8'b00_001_110;  // ld c imm8
+    //assign memory[8] = 8'hCC;
+    //assign memory[9] = 8'b01_000_001;  // ld b c
+
+    assign memory[0] = 8'b00_00_0001;  // ld bc [imm16]
+    assign memory[1] = 8'hBE;
+    assign memory[2] = 8'hEF;
+    assign memory[3] = 8'b00_10_0001;  // ld hl [imm16]
+    assign memory[4] = 8'hDE;
+    assign memory[5] = 8'hAD;
+    assign memory[6] = 8'b11_111001;  // ld sp, hl
+    assign memory[7] = 8'b11_00_0101;  // push bc
+    assign memory[8] = 8'b11_01_0001;  // pop de
 
     initial begin
         clk = 1'b0;
@@ -42,7 +52,7 @@ module gb_cpu_tb ();
         #1;
         reset = 1'b0;
 
-        repeat (20) begin
+        repeat (30) begin
             #1;
             @(posedge clk);
             #1;

@@ -57,7 +57,8 @@ module gb_cpu_decoder (
             case (opcode) inside
 
                 //8'b00_000000: // No Op
-                //8'b00_??_0001: // ld  r16, imm16
+
+                8'b00_??_0001: schedule = load16Bit(.sourceReg(opcode_r16_t'(opcode[5:4])), .load16Reg(1'b1)); // ld  r16, imm16
                 8'b00_??_0010: begin
                     if (opcode[5:4] == 2'd2)
                         schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4])), .indirectInc(1'b1), .writeToMem(1'b1)); // ld  [hli], a
@@ -74,7 +75,7 @@ module gb_cpu_decoder (
                     else
                         schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .addrReg(opcode_r16mem_t'(opcode[5:4]))); // ld a, [r16mem]
                 end
-                //8'b00_001000: // ld  [imm16], sp
+                8'b00_001000:  schedule = load16Bit(.loadStackDirect(1'b1)); // ld  [imm16], sp
                 8'b00_??_0011: schedule = arithmetic16Bit(.incDec(1'b1), .r16(opcode_r16_t'(opcode[5:4])));  // inc r16
                 8'b00_??_1011: schedule = arithmetic16Bit(.incDec(1'b0), .r16(opcode_r16_t'(opcode[5:4])));  // dec r16
                 8'b00_??_1001: schedule = arithmetic16Bit(.addHL(1'b1),  .r16(opcode_r16_t'(opcode[5:4])));  // add hl, r16
@@ -142,8 +143,8 @@ module gb_cpu_decoder (
                 //8'b11_001101: // call imm16
                 //8'b11_???111: // rst tgt3
 
-                //8'b11_??0001: // pop r16stk
-                //8'b11_??0101: // push r16stk
+                8'b11_??_0001: schedule = load16Bit(.stackOpReg(opcode_r16stk_t'(opcode[5:4])), .popOp(1'b1)); // pop r16stk
+                8'b11_??_0101: schedule = load16Bit(.stackOpReg(opcode_r16stk_t'(opcode[5:4])), .pushOp(1'b1)); // push r16stk
 
                 8'b111_0001_0: schedule = load8Bit(.sourceReg(opcode_r8_t'(3'o7)), .writeToMem(1'b1), .offsetAddr(1'b1)); // ldh [c], a
                 8'b111_0000_0: schedule = load8Bit(.direct(1'b1), .writeToMem(1'b1), .offsetAddr(1'b1)); // ldh [imm8], a
@@ -153,23 +154,15 @@ module gb_cpu_decoder (
                 8'b111_1101_0: schedule = load8Bit(.direct(1'b1)); // ld  a, [imm16]
 
                 8'b11_101000: schedule = arithmetic16Bit(.addSP(1'b1));  // add sp, imm8
-                //8'b11_111000: // ld  hl, sp + imm8
-                //8'b11_111001: // ld  sp, hl
+                8'b11_111000: schedule = load16Bit(.loadAdjusted(1'b1)); // ld  hl, sp + imm8
+                8'b11_111001: schedule = load16Bit(.loadStackHL(1'b1)); // ld  sp, hl
 
                 //8'b11_110011: // di
                 //8'b11_111011: // ei
 
-                //8'hD3: // Hard Lock
-                //8'hDB: // Hard Lock
-                //8'hDD: // Hard Lock
-                //8'hE3: // Hard Lock
-                //8'hE4: // Hard Lock
-                //8'hEB: // Hard Lock
-                //8'hEC: // Hard Lock
-                //8'hED: // Hard Lock
-                //8'hF4: // Hard Lock
-                //8'hFC: // Hard Lock
-                //8'hFD: // Hard Lock
+                //8'hCB: // schedule a 0xCB prefixed instruction next
+
+                //8'hD3, 8'hDB, 8'hDD, 8'hE3, 8'hE4, 8'hEB, 8'hEC, 8'hED, 8'hF4, 8'hFC, 8'hFD: // Hard Lock
 
                 default: schedule = emptySchedule();
 
