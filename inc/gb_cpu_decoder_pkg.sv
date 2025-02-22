@@ -58,7 +58,6 @@ package gb_cpu_decoder_pkg;
         schedule.m_cycles       = 3'bxxx;
         schedule.bit_cmd        = 1'bx;
         schedule.cb_prefix_next = 1'bx;
-        schedule.condition      = condition_code_t'(2'bxx);
         for (logic [2:0] i = 0; i < 3'd6; i++) begin
             schedule.instruction_controls[i].addr_bus_source        = addr_bus_source_t'(2'bxx);
             schedule.instruction_controls[i].addr_bus_source_r8     = regfile_r8_t'(4'hx);
@@ -101,7 +100,6 @@ package gb_cpu_decoder_pkg;
         schedule.m_cycles                                       = 3'd4;
         schedule.bit_cmd                                        = 1'b0;
         schedule.cb_prefix_next                                 = 1'b0;
-        schedule.condition                                      = condition_code_t'(2'bxx);
         blankSchedule                                           = emptySchedule();
 
         // Cycle 1 - Decrement Stack so Program Counter can be saved
@@ -271,7 +269,6 @@ package gb_cpu_decoder_pkg;
         regfile_r16_t reg_addr;
         schedule.bit_cmd        = 1'b0;
         schedule.cb_prefix_next = 1'b0;
-        schedule.condition      = condition_code_t'(2'bxx);
         blankSchedule           = emptySchedule();
         reg_source              = opcodeR8Decode(sourceReg);
         reg_other               = opcodeR8Decode(otherReg);
@@ -766,7 +763,6 @@ package gb_cpu_decoder_pkg;
         regfile_r16_t reg_source;
         schedule.bit_cmd        = 1'b0;
         schedule.cb_prefix_next = 1'b0;
-        schedule.condition      = condition_code_t'(2'bxx);
         blankSchedule           = emptySchedule();
         if (pushOp | popOp) reg_source = opcodeR16stkDecode(stackOpReg);
         else if (load16Reg | loadStackDirect) reg_source = opcodeR16Decode(sourceReg);
@@ -1390,7 +1386,6 @@ package gb_cpu_decoder_pkg;
         regfile_r8_t operand_b;
         schedule.bit_cmd        = 1'b0;
         schedule.cb_prefix_next = 1'b0;
-        schedule.condition      = condition_code_t'(2'bxx);
         blankSchedule           = emptySchedule();
         operand_b               = opcodeR8Decode(r8);
 
@@ -1668,7 +1663,6 @@ package gb_cpu_decoder_pkg;
         // Schedule common values
         schedule.bit_cmd        = 1'b0;
         schedule.cb_prefix_next = 1'b0;
-        schedule.condition      = condition_code_t'(2'bxx);
         blankSchedule           = emptySchedule();
         // Set helper registers
         rr                      = opcodeR16Decode(r16);
@@ -1943,7 +1937,6 @@ package gb_cpu_decoder_pkg;
         // Schedule common values
         schedule.bit_cmd        = bitSetRes;
         schedule.cb_prefix_next = 1'b0;
-        schedule.condition      = condition_code_t'(2'bxx);
         blankSchedule           = emptySchedule();
         // Set helper registers
         reg_source              = opcodeR8Decode(r8);
@@ -2162,7 +2155,6 @@ package gb_cpu_decoder_pkg;
         // Schedule common values
         schedule.bit_cmd        = 1'b0;
         schedule.cb_prefix_next = cbNext;
-        schedule.condition      = condition_code_t'(2'bxx);
         blankSchedule           = emptySchedule();
 
         // STOP might be 2-cycle? otherwise everything executes in one cycle

@@ -283,8 +283,6 @@ package gb_cpu_common_pkg;
         logic                   bit_cmd;
         // If the following instruction is 0xCB-prefixed
         logic                   cb_prefix_next;
-        // If a condition check is requested, check this condition
-        condition_code_t        condition;
 
     } schedule_t;
 
