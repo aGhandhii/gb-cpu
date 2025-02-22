@@ -12,7 +12,7 @@ Inputs:
     isr_cmd     - If the instruction will be the ISR
 
 Outputs:
-    schedule    - M-cycle schedule for decoded instruction
+    schedule    - Cycle-by-Cycle control signals for the decoded instruction
 */
 module gb_cpu_decoder (
     input  logic      [7:0] opcode,
@@ -36,18 +36,18 @@ module gb_cpu_decoder (
             // 0xCB prefixed operations
             case (opcode) inside
 
-                //8'b00_000_???: // rlc r8
-                //8'b00_001_???: // rrc r8
-                //8'b00_010_???: // rl  r8
-                //8'b00_011_???: // rr  r8
-                //8'b00_100_???: // sla r8
-                //8'b00_101_???: // sra r8
-                //8'b00_110_???: // swap r8
-                //8'b00_111_???: // srl r8
+                8'b00_000_???: schedule = rotateShiftBit(.opcode(RLC),  .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0)); // rlc  r8
+                8'b00_001_???: schedule = rotateShiftBit(.opcode(RRC),  .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0)); // rrc  r8
+                8'b00_010_???: schedule = rotateShiftBit(.opcode(RL),   .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0)); // rl   r8
+                8'b00_011_???: schedule = rotateShiftBit(.opcode(RR),   .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0)); // rr   r8
+                8'b00_100_???: schedule = rotateShiftBit(.opcode(SLA),  .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0)); // sla  r8
+                8'b00_101_???: schedule = rotateShiftBit(.opcode(SRA),  .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0)); // sra  r8
+                8'b00_110_???: schedule = rotateShiftBit(.opcode(SWAP), .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0)); // swap r8
+                8'b00_111_???: schedule = rotateShiftBit(.opcode(SRL),  .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0)); // srl  r8
 
-                //8'b01_???_???: // bit b3, r8
-                //8'b10_???_???: // res b3, r8
-                //8'b11_???_???: // set b3, r8
+                8'b01_???_???: schedule = rotateShiftBit(.opcode(BIT), .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0), .bitSetRes(1'b1)); // bit b3, r8
+                8'b10_???_???: schedule = rotateShiftBit(.opcode(RES), .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0), .bitSetRes(1'b1)); // res b3, r8
+                8'b11_???_???: schedule = rotateShiftBit(.opcode(SET), .r8(opcode_r8_t'(opcode[2:0])), .indirectHL((opcode[2:0] == 3'd6) ? 1'b1 : 1'b0), .bitSetRes(1'b1)); // set b3, r8
 
                 default: schedule = emptySchedule();
 
@@ -56,7 +56,7 @@ module gb_cpu_decoder (
         end else begin
             case (opcode) inside
 
-                //8'b00_000000: // No Op
+                8'b00_000000: schedule = miscOp(.noOp(1'b1)); // No Op
 
                 8'b00_??_0001: schedule = load16Bit(.sourceReg(opcode_r16_t'(opcode[5:4])), .load16Reg(1'b1)); // ld  r16, imm16
                 8'b00_??_0010: begin
@@ -87,21 +87,24 @@ module gb_cpu_decoder (
                     else
                         schedule = load8Bit(.sourceReg(opcode_r8_t'(opcode[5:3])), .immediate(1'b1)); // ld  r8 imm8
                 end
-                //8'b00_000111: // rlca
-                //8'b00_001111: // rrca
-                //8'b00_010111: // rla
-                //8'b00_011111: // rra
+
+                8'b00_000111: schedule = rotateShiftBit(.opcode(RLCA), .r8(opcode_r8_t'(3'd7))); // rlca
+                8'b00_001111: schedule = rotateShiftBit(.opcode(RRCA), .r8(opcode_r8_t'(3'd7))); // rrca
+                8'b00_010111: schedule = rotateShiftBit(.opcode(RLA),  .r8(opcode_r8_t'(3'd7))); // rla
+                8'b00_011111: schedule = rotateShiftBit(.opcode(RRA),  .r8(opcode_r8_t'(3'd7))); // rra
+
                 8'b00_100111: schedule = arithmetic8Bit(.alu_opcode(DAA), .writeResult(1'b0));  // daa
                 8'b00_101111: schedule = arithmetic8Bit(.alu_opcode(CPL), .writeResult(1'b0));  // cpl
                 8'b00_110111: schedule = arithmetic8Bit(.alu_opcode(SCF), .writeResult(1'b0));  // scf
                 8'b00_111111: schedule = arithmetic8Bit(.alu_opcode(CCF), .writeResult(1'b0));  // ccf
+
                 //8'b00_011000: // jr  imm8
                 //8'b00_1??000: // jr  cond, imm8
-                //8'b00_010000: // stop
+                //8'b00_010000: schedule = miscOp(.stop(1'b1)); // stop
 
                 8'b01_???_???: begin
                     if (opcode == 8'b01_110_110)
-                        schedule = emptySchedule(); // halt TODO
+                        schedule = miscOp(.halt(1'b1)); // halt
                     else begin
                         // first reg is [HL]
                         if (opcode[5:3] == 3'd6)
@@ -157,10 +160,10 @@ module gb_cpu_decoder (
                 8'b11_111000: schedule = load16Bit(.loadAdjusted(1'b1)); // ld  hl, sp + imm8
                 8'b11_111001: schedule = load16Bit(.loadStackHL(1'b1)); // ld  sp, hl
 
-                //8'b11_110011: // di
-                //8'b11_111011: // ei
+                8'b11_110011: schedule = miscOp(.di(1'b1)); // di
+                8'b11_111011: schedule = miscOp(.ei(1'b1)); // ei
 
-                //8'hCB: // schedule a 0xCB prefixed instruction next
+                8'hCB: schedule = miscOp(.cbNext(1'b1)); // schedule a 0xCB prefixed instruction next
 
                 //8'hD3, 8'hDB, 8'hDD, 8'hE3, 8'hE4, 8'hEB, 8'hEC, 8'hED, 8'hF4, 8'hFC, 8'hFD: // Hard Lock
 

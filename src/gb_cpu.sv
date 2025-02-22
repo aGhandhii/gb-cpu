@@ -119,7 +119,7 @@ module gb_cpu (
             default: return 1'b0;
         endcase
     endfunction : conditionCheck
-    assign cond_not_met = curr_controls.cc_check ? conditionCheck(schedule.condition, alu_flags_o) : 1'b0;
+    assign cond_not_met = curr_controls.cc_check ? ~conditionCheck(schedule.condition, alu_flags_o) : 1'b0;
 
     // Handle the output Address Bus
     always_comb begin : addrBusControl
@@ -133,6 +133,8 @@ module gb_cpu (
 
     // Handle the output Data Bus
     always_comb begin : dataBusControl
+        // TODO: set data_o to ALU output for certain operations
+        // this happens when data_bus_o_source == alu_destination and alu_wren is high
         data_o = getRegister8(registers, curr_controls.data_bus_o_source);
         drive_data_bus = curr_controls.drive_data_bus;
     end : dataBusControl

@@ -18,6 +18,28 @@ module gb_cpu_decoder_tb ();
         cb_prefix = 1'b0;
         isr_cmd = 1'b0;
 
+        // misc operations
+        opcode = 8'h00;  // no op
+        #1;
+        opcode = 8'hCB;  // 0xCB next
+        #1;
+        opcode = 8'b01110110;  // halt
+        #1;
+        opcode = 8'b11_110011;  // di
+        #1;
+        opcode = 8'b11_111011;  // ei
+        #1;
+
+        //// accumulator shift operations
+        //opcode = 8'b00_000111;
+        //#1;
+        //opcode = 8'b00_001111;
+        //#1;
+        //opcode = 8'b00_010111;
+        //#1;
+        //opcode = 8'b00_011111;
+        //#1;
+
         //// ld b imm8
         //opcode = 8'b00_000_110;
         //#1;
@@ -102,13 +124,13 @@ module gb_cpu_decoder_tb ();
         //opcode = 8'b11_00_0101;
         //#1;
 
-        // ld hl, sp+e
-        opcode = 8'b11_111000;
-        #1;
+        //// ld hl, sp+e
+        //opcode = 8'b11_111000;
+        //#1;
 
-        // ld sp, hl
-        opcode = 8'b11_111001;
-        #1;
+        //// ld sp, hl
+        //opcode = 8'b11_111001;
+        //#1;
 
         //// xor a e
         //opcode    = 8'b10_101_011;
@@ -139,6 +161,53 @@ module gb_cpu_decoder_tb ();
         //#1;
 
         //isr_cmd   = 1'b1;
+        //#1;
+
+        //// Test the 0xCB prefixed operations
+        //cb_prefix = 1'b1;
+        //opcode = 8'b00_000_000; // rlc  b
+        //#1;
+        //opcode = 8'b00_001_001; // rrc  c
+        //#1;
+        //opcode = 8'b00_010_010; // rl   d
+        //#1;
+        //opcode = 8'b00_011_011; // rr   e
+        //#1;
+        //opcode = 8'b00_100_100; // sla  h
+        //#1;
+        //opcode = 8'b00_101_101; // sra  l
+        //#1;
+        //opcode = 8'b00_110_111; // swap a
+        //#1;
+        //opcode = 8'b00_111_000; // srl  b
+        //#1;
+        //opcode = 8'b00_000_110; // rlc  [hl]
+        //#1;
+        //opcode = 8'b00_001_110; // rrc  [hl]
+        //#1;
+        //opcode = 8'b00_010_110; // rl   [hl]
+        //#1;
+        //opcode = 8'b00_011_110; // rr   [hl]
+        //#1;
+        //opcode = 8'b00_100_110; // sla  [hl]
+        //#1;
+        //opcode = 8'b00_101_110; // sra  [hl]
+        //#1;
+        //opcode = 8'b00_110_110; // swap [hl]
+        //#1;
+        //opcode = 8'b00_111_110; // srl  [hl]
+        //#1;
+        //opcode = 8'b01_000_000; // bit b
+        //#1;
+        //opcode = 8'b10_000_001; // res c
+        //#1;
+        //opcode = 8'b11_000_010; // set d
+        //#1;
+        //opcode = 8'b01_000_110; // bit [hl]
+        //#1;
+        //opcode = 8'b10_000_110; // res [hl]
+        //#1;
+        //opcode = 8'b11_000_110; // set [hl]
         //#1;
 
         $finish();
