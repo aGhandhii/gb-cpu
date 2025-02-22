@@ -261,7 +261,7 @@ package gb_cpu_decoder_pkg;
         logic immediate = 1'b0,  // if we write an immediate value to register/memory
         logic regToReg = 1'b0,  // do 1-cycle register load
         logic indirectInc = 1'b0,  // if we do the indirect inc on HL
-        logic indirectDec       = 1'b0                      // if we do the indirect dec on HL
+        logic indirectDec = 1'b0  // if we do the indirect dec on HL
     );
 
         schedule_t schedule, blankSchedule;
