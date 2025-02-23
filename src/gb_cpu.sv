@@ -136,11 +136,11 @@ module gb_cpu (
 
     // Handle the output Data Bus
     always_comb begin : dataBusControl
+        drive_data_bus = curr_controls.drive_data_bus;
         // set data_o to ALU output for certain operations to prevent race conditions for memory writes
         if (curr_controls.drive_data_bus && curr_controls.alu_wren && (curr_controls.data_bus_o_source == curr_controls.alu_destination))
             data_o = alu_o;
         else data_o = getRegister8(registers, curr_controls.data_bus_o_source);
-        drive_data_bus = curr_controls.drive_data_bus;
     end : dataBusControl
 
 
@@ -165,6 +165,7 @@ module gb_cpu (
         .set_adj(curr_controls.set_adj),
         .overwrite_req(curr_controls.overwrite_req),
         .overwrite_wren(curr_controls.overwrite_wren),
+        .add_adj_pc(curr_controls.enable_interrupts & curr_controls.disable_interrupts),
         .write_interrupt_vector(curr_controls.write_interrupt_vector),
         .interrupt_vector(interrupt_vector),
         .registers(registers)

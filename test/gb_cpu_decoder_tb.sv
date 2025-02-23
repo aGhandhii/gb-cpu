@@ -18,17 +18,42 @@ module gb_cpu_decoder_tb ();
         cb_prefix = 1'b0;
         isr_cmd = 1'b0;
 
-        // misc operations
-        opcode = 8'h00;  // no op
+        // CONTROL FLOW
+        opcode = 8'b11_101001;  // jp hl
         #1;
-        opcode = 8'hCB;  // 0xCB next
+        opcode = 8'b11_000011;  // jp imm16
         #1;
-        opcode = 8'b01110110;  // halt
+        opcode = 8'b11_0_00_010;  // jp cond imm16
         #1;
-        opcode = 8'b11_110011;  // di
+        opcode = 8'b00_011000;  // jr imm8
         #1;
-        opcode = 8'b11_111011;  // ei
+        opcode = 8'b00_1_00_000;  // jr cond imm8
         #1;
+        opcode = 8'b11_001101;  // call imm16
+        #1;
+        opcode = 8'b11_0_00_100;  // call cond imm16
+        #1;
+        opcode = 8'b11_001001;  // ret
+        #1;
+        opcode = 8'b11_0_00_000;  // ret cond
+        #1;
+        opcode = 8'b11_011001;  // reti
+        #1;
+        opcode = 8'b11_000_111;  // rst
+        #1;
+
+
+        //// misc operations
+        //opcode = 8'h00;  // no op
+        //#1;
+        //opcode = 8'hCB;  // 0xCB next
+        //#1;
+        //opcode = 8'b01110110;  // halt
+        //#1;
+        //opcode = 8'b11_110011;  // di
+        //#1;
+        //opcode = 8'b11_111011;  // ei
+        //#1;
 
         //// accumulator shift operations
         //opcode = 8'b00_000111;

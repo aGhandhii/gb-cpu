@@ -43,6 +43,7 @@ Inputs:
     set_adj                 - Set the adjustment
     overwrite_req           - 16 Bit register to be overwritten by TEMP Register
     overwrite_wren          - Write TEMP register contents to another 16-bit Register
+    add_adj_pc              - set PC to sum of PC and TMP, needed for relative jump
 
     write_interrupt_vector  - Overwrite with Interrupt Vector rather than TEMP
     interrupt_vector        - Highest Priority Interrupt Vector
@@ -67,6 +68,7 @@ module gb_cpu_regfile (
     logic set_adj,
     regfile_r16_t overwrite_req,
     logic overwrite_wren,
+    logic add_adj_pc,
     logic write_interrupt_vector,
     logic [7:0] interrupt_vector,
     output regfile_t registers
@@ -131,6 +133,8 @@ module gb_cpu_regfile (
             if (write_interrupt_vector) begin
                 registers.pc_lo <= interrupt_vector;
                 registers.pc_hi <= 8'd0;
+            end else if (add_adj_pc) begin
+                {registers.pc_hi, registers.pc_lo} <= {registers.pc_hi, registers.pc_lo} + {registers.tmp_hi, registers.tmp_lo};
             end else begin
                 registers.pc_lo <= (overwrite_wren && (overwrite_req == REG_PC)) ? registers.tmp_lo : registers.pc_lo;
                 registers.pc_hi <= (overwrite_wren && (overwrite_req == REG_PC)) ? registers.tmp_hi : registers.pc_hi;

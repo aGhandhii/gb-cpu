@@ -16,6 +16,7 @@ module gb_cpu_tb ();
     // Emulate Memory
     logic [7:0] memory[65536];
     assign data_i = memory[addr_o];
+    always_ff @(negedge clk) memory[addr_o] <= drive_data_bus ? data_o : memory[addr_o];
 
     //assign memory[0] = 8'b11_000_110;  // add a, imm8
     //assign memory[1] = 8'h05;
@@ -35,17 +36,18 @@ module gb_cpu_tb ();
     assign memory[4] = 8'hDE;
     assign memory[5] = 8'hAD;
     assign memory[6] = 8'b11_111001;  // ld sp, hl
-    //assign memory[7] = 8'b11_00_0101;  // push bc
-    //assign memory[8] = 8'b11_01_0001;  // pop de
-    assign memory[7] = 8'hCB;
-    assign memory[8] = 8'b00_110_001;  // swap c
-    assign memory[9] = 8'hCB;
-    assign memory[10] = 8'b10_110_001;  // res c 6
-    assign memory[11] = 8'hCB;
-    assign memory[12] = 8'b11_110_001;  // set c 6
-    assign memory[13] = 8'b11_111011;  // ei
-    assign memory[14] = 8'b11_110011;  // di
-    assign memory[15] = 8'b01110110;  // halt
+    assign memory[7] = 8'b11_00_0101;  // push bc
+    assign memory[8] = 8'b11_01_0001;  // pop de
+    assign memory[9] = 8'b01110110;  // halt
+    //assign memory[7] = 8'hCB;
+    //assign memory[8] = 8'b00_110_001;  // swap c
+    //assign memory[9] = 8'hCB;
+    //assign memory[10] = 8'b10_110_001;  // res c 6
+    //assign memory[11] = 8'hCB;
+    //assign memory[12] = 8'b11_110_001;  // set c 6
+    //assign memory[13] = 8'b11_111011;  // ei
+    //assign memory[14] = 8'b11_110011;  // di
+    //assign memory[15] = 8'b01110110;  // halt
 
     initial begin
         clk = 1'b0;

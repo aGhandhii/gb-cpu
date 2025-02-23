@@ -159,17 +159,18 @@ module gb_cpu_decoder (
                 //////////////////
                 // CONTROL FLOW //
                 //////////////////
-                //8'b11_000011: // jp  imm16
-                //8'b11_101001: // jp  hl
-                //8'b11_0??010: // jp  cond, imm16
-                //8'b00_011000: // jr  imm8
-                //8'b00_1??000: // jr  cond, imm8
-                //8'b11_001101: // call imm16
-                //8'b11_0??100: // call cond, imm16
-                //8'b11_001001: // ret
-                //8'b11_0??000: // ret cond
-                //8'b11_011001: // reti
-                //8'b11_???111: // rst tgt3
+                // TODO test all
+                8'b11_000011: schedule = controlFlow(.jump(1'b1)); // jp  imm16
+                8'b11_101001: schedule = controlFlow(.jumpHL(1'b1)); // jp  hl
+                8'b11_0??010: schedule = controlFlow(.jump(1'b1), .conditional(1'b1)); // jp  cond, imm16
+                8'b00_011000: schedule = controlFlow(.jumpRelative(1'b1)); // jr  imm8
+                8'b00_1??000: schedule = controlFlow(.jumpRelative(1'b1), .conditional(1'b1)); // jr  cond, imm8
+                8'b11_001101: schedule = controlFlow(.call(1'b1)); // call imm16
+                8'b11_0??100: schedule = controlFlow(.call(1'b1), .conditional(1'b1)); // call cond, imm16
+                8'b11_001001: schedule = controlFlow(.ret(1'b1)); // ret
+                8'b11_0??000: schedule = controlFlow(.ret(1'b1), .conditional(1'b1)); // ret cond
+                8'b11_011001: schedule = controlFlow(.reti(1'b1)); // reti
+                8'b11_???111: schedule = controlFlow(.restart(1'b1)); // rst tgt3
 
                 ///////////////////
                 // MISCELLANEOUS //
