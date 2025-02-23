@@ -30,15 +30,16 @@ module gb_cpu_tb ();
     //assign memory[9] = 8'b01_000_001;  // ld b c
 
     assign memory[0] = 8'b00_00_0001;  // ld bc [imm16]
-    assign memory[1] = 8'hBE;
-    assign memory[2] = 8'hEF;
+    assign memory[1] = 8'hEF;
+    assign memory[2] = 8'hBE;  // BC = 0xBEEF
     assign memory[3] = 8'b00_10_0001;  // ld hl [imm16]
-    assign memory[4] = 8'hDE;
-    assign memory[5] = 8'hAD;
+    assign memory[4] = 8'hAD;
+    assign memory[5] = 8'hDE;  // HL = 0xDEAD
     assign memory[6] = 8'b11_111001;  // ld sp, hl
     assign memory[7] = 8'b11_00_0101;  // push bc
     assign memory[8] = 8'b11_01_0001;  // pop de
     assign memory[9] = 8'b01110110;  // halt
+
     //assign memory[7] = 8'hCB;
     //assign memory[8] = 8'b00_110_001;  // swap c
     //assign memory[9] = 8'hCB;
@@ -48,6 +49,14 @@ module gb_cpu_tb ();
     //assign memory[13] = 8'b11_111011;  // ei
     //assign memory[14] = 8'b11_110011;  // di
     //assign memory[15] = 8'b01110110;  // halt
+
+    //assign memory[ 0] = 8'h18; // jr
+    //assign memory[ 1] = 8'h09; // go to address 10
+    //assign memory[ 7] = 8'b00_001_110; // ld c imm8
+    //assign memory[ 8] = 8'hCC;
+    //assign memory[ 9] = 8'b01110110; // halt
+    //assign memory[10] = 8'h18; // jr
+    //assign memory[11] = 8'hFC; // signed -4, jump to address 7
 
     initial begin
         clk = 1'b0;

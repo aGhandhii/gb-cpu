@@ -15,13 +15,13 @@ The regfile gets write requests from the following sources:
 There should never be a condition where multiple sources try and write to a
 single source. Regardless, a priority scheme is implemented
 
-The data bus can only write to the IR and TEMP registers, and the write is
-performed at the positive edge of the clock. For all other write requests, the
-writes are performed at the negative edge to resolve outputs before the next
-positive edge.
+The data bus can only write to the IR and TEMP registers; for all writes to
+registers within the CPU, the writes are performed at the negative edge to
+resolve CPU outputs before the next positive edge.
     - for example, if we drive register A over the data bus but also write to
       it in the same m-cycle, the write needs to occur first so our updated
       register value is on the bus at the next positive edge
+
 
 Inputs:
     clk                     - Machine Clock
@@ -74,6 +74,9 @@ module gb_cpu_regfile (
     output regfile_t registers
 );
 
+    // Update IR at negedge, but apply updates at posedge
+    logic [7:0] ir_updated;
+
     // Split IDU requests into 8-bit register counterparts
     regfile_r8_t idu_req_lo, idu_req_hi;
     assign idu_req_lo = getRegisterLow(idu_req);
@@ -100,7 +103,7 @@ module gb_cpu_regfile (
         else return data_in;
     endfunction : setNegedgeValue
 
-    // Handle resets, data bus writes, and special operations
+    // Handle resets, IR updates, and special operations
     always_ff @(posedge clk) begin
         if (reset) begin
             registers.ir     <= 8'd0;
@@ -114,58 +117,76 @@ module gb_cpu_regfile (
             registers.l      <= 8'd0;
             registers.sp_lo  <= 8'd0;
             registers.sp_hi  <= 8'd0;
-            registers.pc_lo  <= 8'hFF;
-            registers.pc_hi  <= 8'hFF;
+            registers.pc_lo  <= 8'd0;
+            registers.pc_hi  <= 8'd0;
             registers.tmp_lo <= 8'd0;
             registers.tmp_hi <= 8'd0;
         end else begin
-            registers.ir    <= ((data_bus_req == REG_IR) && data_bus_wren) ? data_bus_data : registers.ir;
-            registers.a     <= (overwrite_wren && (overwrite_req == REG_AF)) ? registers.tmp_lo : registers.a;
-            registers.f     <= (overwrite_wren && (overwrite_req == REG_AF)) ? registers.tmp_hi : registers.f;
-            registers.b     <= (overwrite_wren && (overwrite_req == REG_BC)) ? registers.tmp_lo : registers.b;
-            registers.c     <= (overwrite_wren && (overwrite_req == REG_BC)) ? registers.tmp_hi : registers.c;
-            registers.d     <= (overwrite_wren && (overwrite_req == REG_DE)) ? registers.tmp_lo : registers.d;
-            registers.e     <= (overwrite_wren && (overwrite_req == REG_DE)) ? registers.tmp_hi : registers.e;
-            registers.h     <= (overwrite_wren && (overwrite_req == REG_HL)) ? registers.tmp_lo : registers.h;
-            registers.l     <= (overwrite_wren && (overwrite_req == REG_HL)) ? registers.tmp_hi : registers.l;
+
+            registers.ir    <= ir_updated;
+
+            registers.a     <= (overwrite_wren && (overwrite_req == REG_AF)) ? registers.tmp_hi : registers.a;
+            registers.f     <= (overwrite_wren && (overwrite_req == REG_AF)) ? registers.tmp_lo : registers.f;
+            registers.b     <= (overwrite_wren && (overwrite_req == REG_BC)) ? registers.tmp_hi : registers.b;
+            registers.c     <= (overwrite_wren && (overwrite_req == REG_BC)) ? registers.tmp_lo : registers.c;
+            registers.d     <= (overwrite_wren && (overwrite_req == REG_DE)) ? registers.tmp_hi : registers.d;
+            registers.e     <= (overwrite_wren && (overwrite_req == REG_DE)) ? registers.tmp_lo : registers.e;
+            registers.h     <= (overwrite_wren && (overwrite_req == REG_HL)) ? registers.tmp_hi : registers.h;
+            registers.l     <= (overwrite_wren && (overwrite_req == REG_HL)) ? registers.tmp_lo : registers.l;
             registers.sp_lo <= (overwrite_wren && (overwrite_req == REG_SP)) ? registers.tmp_lo : registers.sp_lo;
             registers.sp_hi <= (overwrite_wren && (overwrite_req == REG_SP)) ? registers.tmp_hi : registers.sp_hi;
+
             if (write_interrupt_vector) begin
                 registers.pc_lo <= interrupt_vector;
                 registers.pc_hi <= 8'd0;
-            end else if (add_adj_pc) begin
-                {registers.pc_hi, registers.pc_lo} <= {registers.pc_hi, registers.pc_lo} + {registers.tmp_hi, registers.tmp_lo};
             end else begin
                 registers.pc_lo <= (overwrite_wren && (overwrite_req == REG_PC)) ? registers.tmp_lo : registers.pc_lo;
                 registers.pc_hi <= (overwrite_wren && (overwrite_req == REG_PC)) ? registers.tmp_hi : registers.pc_hi;
             end
-            registers.tmp_lo <= ((data_bus_req == REG_TMP_L) && data_bus_wren) ? data_bus_data : registers.tmp_lo;
-            if (set_adj) registers.tmp_hi <= {8{registers.tmp_lo[7]}};
-            else registers.tmp_hi <= ((data_bus_req == REG_TMP_H) && data_bus_wren) ? data_bus_data : registers.tmp_hi;
+
+            if (add_adj_pc) begin
+                {registers.tmp_hi, registers.tmp_lo} <= ({registers.pc_hi, registers.pc_lo} - 16'd1) + {registers.tmp_hi, registers.tmp_lo};
+            end else begin
+                registers.tmp_lo <= registers.tmp_lo;
+                registers.tmp_hi <= set_adj ? {8{registers.tmp_lo[7]}} : registers.tmp_hi;
+            end
+
         end
     end
 
-    // Handle ALU and IDU write requests
+    // Handle data bus, ALU, and IDU write requests
     always_ff @(negedge clk) begin
         /* verilog_format: off */
-        registers.a         <= setNegedgeValue(registers.a,      REG_A,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
+        ir_updated          <= ((data_bus_req == REG_IR) && data_bus_wren) ? data_bus_data : registers.ir;
+
         if ((idu_req_lo == REG_F || idu_req_hi == REG_F) && idu_wren)
             registers.f     <= setNegedgeValue(registers.f,      REG_F,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         else
             registers.f     <= flagRegNext;
+
+        registers.a         <= setNegedgeValue(registers.a,      REG_A,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.b         <= setNegedgeValue(registers.b,      REG_B,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.c         <= setNegedgeValue(registers.c,      REG_C,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.d         <= setNegedgeValue(registers.d,      REG_D,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.e         <= setNegedgeValue(registers.e,      REG_E,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.h         <= setNegedgeValue(registers.h,      REG_H,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.l         <= setNegedgeValue(registers.l,      REG_L,     alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
-        registers.ir        <= setNegedgeValue(registers.ir,     REG_IR,    alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.sp_lo     <= setNegedgeValue(registers.sp_lo,  REG_SP_L,  alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.sp_hi     <= setNegedgeValue(registers.sp_hi,  REG_SP_H,  alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.pc_lo     <= setNegedgeValue(registers.pc_lo,  REG_PC_L,  alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
         registers.pc_hi     <= setNegedgeValue(registers.pc_hi,  REG_PC_H,  alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
-        registers.tmp_lo    <= setNegedgeValue(registers.tmp_lo, REG_TMP_L, alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
-        registers.tmp_hi    <= setNegedgeValue(registers.tmp_hi, REG_TMP_H, alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
+
+
+        if ((data_bus_req == REG_TMP_L) && data_bus_wren)
+            registers.tmp_lo <= data_bus_data;
+        else
+            registers.tmp_lo <= setNegedgeValue(registers.tmp_lo, REG_TMP_L, alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
+
+        if ((data_bus_req == REG_TMP_H) && data_bus_wren)
+            registers.tmp_hi <= data_bus_data;
+        else
+            registers.tmp_hi <= setNegedgeValue(registers.tmp_hi, REG_TMP_H, alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
+
         /* verilog_format: on */
     end
 

@@ -189,7 +189,7 @@ package gb_cpu_decoder_pkg;
         // Cycle 4 - Load the Interrupt Vector into the Program Counter, Clear IF flag, Disable Interrupts
         schedule.instruction_controls[3].addr_bus_source        = ADDR_BUS_REG16;
         schedule.instruction_controls[3].addr_bus_source_r8     = regfile_r8_t'(4'hx);
-        schedule.instruction_controls[3].addr_bus_source_r16    = REG_PC;
+        schedule.instruction_controls[3].addr_bus_source_r16    = regfile_r16_t'(3'bxxx);
         schedule.instruction_controls[3].data_bus_i_destination = regfile_r8_t'(4'hx);
         schedule.instruction_controls[3].data_bus_o_source      = regfile_r8_t'(4'hx);
         schedule.instruction_controls[3].drive_data_bus         = 1'b0;
