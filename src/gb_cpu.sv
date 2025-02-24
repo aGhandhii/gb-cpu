@@ -11,8 +11,8 @@ Inputs:
 Outputs:
     addr_o                  - Outgoing Address Bus
     data_o                  - Outgoing Data Bus
-    drive_data_bus          - write enable for data out
-    clear_interrupt_flag    - Reset highest priority Interrupt Flag Bit
+    drive_data_bus          - Write Enable for Outgoing Data
+    clear_interrupt_flag    - Reset Highest Priority Interrupt Flag Bit
 */
 /* verilator lint_off MULTIDRIVEN */
 module gb_cpu (
@@ -162,12 +162,13 @@ module gb_cpu (
         .data_bus_req(curr_controls.data_bus_i_destination),
         .data_bus_data(data_i),
         .data_bus_wren(curr_controls.receive_data_bus),
-        .set_adj(curr_controls.set_adj),
         .overwrite_req(curr_controls.overwrite_req),
         .overwrite_wren(curr_controls.overwrite_wren),
+        .set_adj(curr_controls.set_adj),
         .add_adj_pc(curr_controls.enable_interrupts & curr_controls.disable_interrupts),
         .write_interrupt_vector(curr_controls.write_interrupt_vector),
         .interrupt_vector(interrupt_vector),
+        .restart_cmd(curr_controls.rst_cmd),
         .registers(registers)
     );
 

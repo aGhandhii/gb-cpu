@@ -2917,8 +2917,8 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[2].clear_interrupt_flag   = 1'b0;
             schedule.instruction_controls[2].rst_cmd                = 1'b1;
             schedule.instruction_controls[2].cc_check               = 1'b0;
-            schedule.instruction_controls[2].overwrite_wren         = 1'b0;
-            schedule.instruction_controls[2].overwrite_req          = regfile_r16_t'(3'bxxx);
+            schedule.instruction_controls[2].overwrite_wren         = 1'b1;
+            schedule.instruction_controls[2].overwrite_req          = REG_PC;
             schedule.instruction_controls[2].set_adj                = 1'b0;
             schedule.instruction_controls[2].add_adj                = 1'b0;
             // Cycle 4 - fetch next instruction

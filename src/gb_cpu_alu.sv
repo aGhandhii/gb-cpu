@@ -8,12 +8,12 @@ Handles 8-bit operations and sets flags
     C = Carry Flag
 
 Inputs:
-    instruction - contains operands and opcode
-    flags_i     - flags from previous operation
+    instruction - Contains Operands and Opcode
+    flags_i     - Flags from Previous Operation
 
 Outputs:
-    out         - 8-bit result
-    flags_o     - flag results from operation
+    out         - 8-bit Result
+    flags_o     - Flag Results from Operation
 */
 module gb_cpu_alu (
     alu_instruction_t instruction,

@@ -4,10 +4,10 @@ import gb_cpu_common_pkg::*;
 Specialized unit for 16-bit increment and decrement operations
 
 Inputs:
-    instruction - contains 16-bit input data and opcode
+    instruction - Contains 16-bit Input Data and Opcode
 
 Outputs:
-    out     - 16-bit output data
+    out         - 16-bit Output Data
 */
 module gb_cpu_idu (
     input idu_instruction_t instruction,

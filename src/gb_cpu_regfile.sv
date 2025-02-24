@@ -13,43 +13,40 @@ The regfile gets write requests from the following sources:
     - Set the Program Counter to an Interrupt Vector
 
 There should never be a condition where multiple sources try and write to a
-single source. Regardless, a priority scheme is implemented
+single source. Regardless, a priority scheme is implemented.
 
-The data bus can only write to the IR and TEMP registers; for all writes to
-registers within the CPU, the writes are performed at the negative edge to
-resolve CPU outputs before the next positive edge.
-    - for example, if we drive register A over the data bus but also write to
-      it in the same m-cycle, the write needs to occur first so our updated
-      register value is on the bus at the next positive edge
-
+The data bus can only write to the IR and TEMP registers.
 
 Inputs:
     clk                     - Machine Clock
     reset                   - System Reset
 
-    alu_req                 - 8 bit register
-    alu_data                - 8 bit value
+    alu_req                 - 8 bit Register
+    alu_data                - 8 bit Value
     alu_flags               - Flags from the ALU
     alu_wren                - Write Enable for the ALU
 
-    idu_req                 - 16 bit register
-    idu_data                - 16 bit value
+    idu_req                 - 16 bit Register
+    idu_data                - 16 bit Value
     idu_wren                - Write Enable for the IDU
 
-    data_bus_req            - 8 bit register (only relevant if IR or TMP)
-    data_bus_data           - 8 bit value
-    data_bus_wren           - If we write the incoming value on the data bus
+    data_bus_req            - 8 bit Register (IR or TMP)
+    data_bus_data           - 8 bit Value
+    data_bus_wren           - If We Write the Incoming Value on the Data Bus
 
-    set_adj                 - Set the adjustment
-    overwrite_req           - 16 Bit register to be overwritten by TEMP Register
-    overwrite_wren          - Write TEMP register contents to another 16-bit Register
-    add_adj_pc              - set PC to sum of PC and TMP, needed for relative jump
+    overwrite_req           - 16 Bit Register to be Overwritten by TEMP Register
+    overwrite_wren          - Write TEMP Register Contents to Another 16-bit Register
 
-    write_interrupt_vector  - Overwrite with Interrupt Vector rather than TEMP
+    set_adj                 - Set the Adjustment
+    add_adj_pc              - Set PC to Sum of PC and TMP, for Relative Jump
+
+    write_interrupt_vector  - Overwrite PC with Interrupt Vector
     interrupt_vector        - Highest Priority Interrupt Vector
 
+    restart_cmd             - Clear TMP_HI Register
+
 Outputs:
-    registers               - Register File for the CPU, all stored as 8-bit values
+    registers               - Register File for the CPU, Stored as 8-bit Values
 */
 /* verilator lint_off MULTIDRIVEN */
 module gb_cpu_regfile (
@@ -65,16 +62,17 @@ module gb_cpu_regfile (
     regfile_r8_t data_bus_req,
     logic [7:0] data_bus_data,
     logic data_bus_wren,
-    logic set_adj,
     regfile_r16_t overwrite_req,
     logic overwrite_wren,
+    logic set_adj,
     logic add_adj_pc,
     logic write_interrupt_vector,
     logic [7:0] interrupt_vector,
+    logic restart_cmd,
     output regfile_t registers
 );
 
-    // Update IR at negedge, but apply updates at posedge
+    // Obtain next value for IR at negedge, but apply at posedge
     logic [7:0] ir_updated;
 
     // Split IDU requests into 8-bit register counterparts
@@ -182,7 +180,9 @@ module gb_cpu_regfile (
         else
             registers.tmp_lo <= setNegedgeValue(registers.tmp_lo, REG_TMP_L, alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);
 
-        if ((data_bus_req == REG_TMP_H) && data_bus_wren)
+        if (restart_cmd)
+            registers.tmp_hi <= 8'd0;
+        else if ((data_bus_req == REG_TMP_H) && data_bus_wren)
             registers.tmp_hi <= data_bus_data;
         else
             registers.tmp_hi <= setNegedgeValue(registers.tmp_hi, REG_TMP_H, alu_data, alu_req, alu_wren, idu_data_lo, idu_req_lo, idu_wren, idu_data_hi, idu_req_hi, idu_wren);

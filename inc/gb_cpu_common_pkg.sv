@@ -87,7 +87,6 @@ package gb_cpu_common_pkg;
         logic [7:0] tmp_hi;
     } regfile_t;
 
-    // IR stores the current instruction
     typedef enum logic [3:0] {
         REG_A,
         REG_F,
@@ -171,7 +170,6 @@ package gb_cpu_common_pkg;
         return {getRegister8(registers, getRegisterHigh(r16)), getRegister8(registers, getRegisterLow(r16))};
     endfunction : getRegister16
 
-    // These are decoded from the opcode, and specify a register
     typedef enum logic [2:0] {
         R8_B       = 3'o0,
         R8_C       = 3'o1,
@@ -231,7 +229,6 @@ package gb_cpu_common_pkg;
         regfile_r8_t      addr_bus_source_r8;
         regfile_r16_t     addr_bus_source_r16;
 
-        // This will synthesize on an FPGA, so data bus is split for I/O
         regfile_r8_t data_bus_i_destination;  // where to write incoming data on bus
         regfile_r8_t data_bus_o_source;       // register to drive over data bus
         logic        receive_data_bus;        // write incoming data to registers
@@ -245,7 +242,7 @@ package gb_cpu_common_pkg;
         alu_opcode_t alu_opcode;
         regfile_r8_t alu_operand_a_register;
         regfile_r8_t alu_operand_b_register;
-        logic        alu_inc_dec;             // Pass 1 as operand_b
+        logic        alu_inc_dec;
         regfile_r8_t alu_destination;
         logic        alu_wren;
 
@@ -261,6 +258,7 @@ package gb_cpu_common_pkg;
         // These signals are needed for the following instructions:
         //   - ld  HL, SP+e
         //   - add SP, e
+        //   - jr
         logic         set_adj;                 // set the signed arithmetic adjust value
         logic         add_adj;                 // force the alu input to be adj, and do not set flags
 

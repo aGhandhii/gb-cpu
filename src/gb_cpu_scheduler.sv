@@ -12,15 +12,15 @@ Also handles event-driven cases:
 Inputs:
     clk                 - Machine (M) Clock
     reset               - System Reset
-    schedule            - the instruction schedule for the current opcode
-    curr_m_cycle        - M cycle counter for current instruction
-    cond_not_met        - if a condition check was executed but failed
-    interrupt_queued    - if the next instruction will be the ISR
+    schedule            - Instruction <S-Del>Sschedule for the Current Opcode
+    curr_m_cycle        - M-cycle Counter for Current Instruction
+    cond_not_met        - If a Condition Check was Executed but Failed
+    interrupt_queued    - If the Next Instruction will be the ISR
 
 Outputs:
-    control             - control signals for the next M-cycle
-    cb_prefix_o         - if next instruction will be 0xCB prefixed
-    isr_cmd             - next instruction will be ISR
+    control             - Control Signals for the Next M-cycle
+    cb_prefix_o         - Next Instruction will be 0xCB Prefixed
+    isr_cmd             - Next Instruction will be ISR
 */
 module gb_cpu_scheduler (
     input  logic                   clk,
