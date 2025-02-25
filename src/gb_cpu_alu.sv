@@ -16,10 +16,10 @@ Outputs:
     flags_o     - Flag Results from Operation
 */
 module gb_cpu_alu (
-    alu_instruction_t instruction,
-    input alu_flags_t flags_i,
-    output logic [7:0] out,
-    output alu_flags_t flags_o
+    input  alu_instruction_t       instruction,
+    input  alu_flags_t             flags_i,
+    output logic             [7:0] out,
+    output alu_flags_t             flags_o
 );
 
     /* verilator lint_off WIDTHEXPAND */

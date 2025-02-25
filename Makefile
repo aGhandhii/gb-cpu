@@ -67,7 +67,7 @@ endif
 ifdef WAVES
 	# Loading Waveform
 	mv $(TOP).fst $(TEST_WAVE)
-	surfer.exe $(TEST_WAVE)
+	surfer.exe $(TEST_WAVE) &
 endif
 endif
 ifdef VERILATOR
@@ -78,7 +78,7 @@ ifdef VERILATOR
 	cat $(TEST_LOG)
 	mv $(TOP).fst $(TEST_WAVE)
 ifdef WAVES
-	surfer.exe $(TEST_WAVE)
+	surfer.exe $(TEST_WAVE) &
 endif
 endif
 
