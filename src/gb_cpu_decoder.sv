@@ -159,7 +159,6 @@ module gb_cpu_decoder (
                 //////////////////
                 // CONTROL FLOW //
                 //////////////////
-                // TODO test all
                 8'b11_000011: schedule = controlFlow(.jump(1'b1)); // jp  imm16
                 8'b11_101001: schedule = controlFlow(.jumpHL(1'b1)); // jp  hl
                 8'b11_0??010: schedule = controlFlow(.jump(1'b1), .conditional(1'b1)); // jp  cond, imm16

@@ -106,21 +106,21 @@ module gb_cpu_regfile (
     // Handle resets, IDU write requests, IR updates, and special operations
     always_ff @(posedge clk) begin
         if (reset) begin
-            registers.ir     <= 8'd0;
-            registers.a      <= 8'd0;
-            registers.f      <= 8'd0;
-            registers.b      <= 8'd0;
-            registers.c      <= 8'd0;
-            registers.d      <= 8'd0;
-            registers.e      <= 8'd0;
-            registers.h      <= 8'd0;
-            registers.l      <= 8'd0;
-            registers.sp_lo  <= 8'd0;
-            registers.sp_hi  <= 8'd0;
-            registers.pc_lo  <= 8'd0;
-            registers.pc_hi  <= 8'd0;
-            registers.tmp_lo <= 8'd0;
+            registers.ir     <= 8'h00;
+            registers.a      <= 8'h01;
+            registers.f      <= 8'hB0;
+            registers.b      <= 8'h00;
+            registers.c      <= 8'h13;
+            registers.d      <= 8'h00;
+            registers.e      <= 8'hD8;
+            registers.h      <= 8'h01;
+            registers.l      <= 8'h4D;
+            registers.sp_hi  <= 8'hFF;
+            registers.sp_lo  <= 8'hFE;
+            registers.pc_hi  <= 8'h01;
+            registers.pc_lo  <= 8'h00;
             registers.tmp_hi <= 8'd0;
+            registers.tmp_lo <= 8'd0;
         end else begin
 
             registers.ir        <= ir_updated;

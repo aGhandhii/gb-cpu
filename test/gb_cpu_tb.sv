@@ -15,38 +15,50 @@ module gb_cpu_tb ();
 
     // Emulate Memory
     logic [7:0] memory[65536];
-    assign data_i = memory[addr_o];
+
     always_ff @(posedge clk) memory[addr_o] <= drive_data_bus ? data_o : memory[addr_o];
 
+    always_comb begin
+        data_i = memory[addr_o];
+        reg_IF = memory[16'hFF0F];
+        reg_IE = memory[16'hFFFF];
+    end
+
+    // print blargg test results
+    always_ff @(posedge clk)
+        if (memory[16'hFF02] == 8'h81) begin
+            $write("%s", memory[16'hFF01]);
+            memory[16'hFF02] <= 8'd0;
+        end
+
+    // Interrupt Flag
     always_ff @(posedge clk)
         if (clear_interrupt_flag)
-            if (reg_IF[0]) reg_IF <= reg_IF ^ 8'h01;
-            else if (reg_IF[1]) reg_IF <= reg_IF ^ 8'h02;
-            else if (reg_IF[2]) reg_IF <= reg_IF ^ 8'h04;
-            else if (reg_IF[3]) reg_IF <= reg_IF ^ 8'h08;
-            else if (reg_IF[4]) reg_IF <= reg_IF ^ 8'h10;
-            else reg_IF <= reg_IF;
+            if (reg_IF[0]) memory[16'hFF0F] <= reg_IF ^ 8'h01;
+            else if (reg_IF[1]) memory[16'hFF0F] <= reg_IF ^ 8'h02;
+            else if (reg_IF[2]) memory[16'hFF0F] <= reg_IF ^ 8'h04;
+            else if (reg_IF[3]) memory[16'hFF0F] <= reg_IF ^ 8'h08;
+            else if (reg_IF[4]) memory[16'hFF0F] <= reg_IF ^ 8'h10;
+            else memory[16'hFF0F] <= reg_IF;
 
-    assign memory[0]  = 8'b11_000_110;  // add a, 5
-    assign memory[1]  = 8'h05;
-    assign memory[2]  = 8'b11_010_110;  // sub a, 2
-    assign memory[3]  = 8'h02;
-    assign memory[4]  = 8'b00_01_0011;  // inc de
-    assign memory[5]  = 8'b00_01_0011;  // inc de
-    assign memory[6]  = 8'b00_01_1011;  // dec de
-    assign memory[7]  = 8'b00_001_110;  // ld c imm8
-    assign memory[8]  = 8'hCC;
-    assign memory[9]  = 8'b01_000_001;  // ld b c
-    assign memory[10] = 8'b11_001101;  // call 20
-    assign memory[11] = 8'h14;
-    assign memory[12] = 8'h00;
-
-    assign memory[13] = 8'b00_01_0011;  // inc de
-    assign memory[14] = 8'b01110110;  // halt
-
-    assign memory[20] = 8'b11_000_110;  // add a 7
-    assign memory[21] = 8'h07;
-    assign memory[22] = 8'b11_001001;  // ret
+    //assign memory[0]  = 8'b11_000_110;  // add a, 5
+    //assign memory[1]  = 8'h05;
+    //assign memory[2]  = 8'b11_010_110;  // sub a, 2
+    //assign memory[3]  = 8'h02;
+    //assign memory[4]  = 8'b00_01_0011;  // inc de
+    //assign memory[5]  = 8'b00_01_0011;  // inc de
+    //assign memory[6]  = 8'b00_01_1011;  // dec de
+    //assign memory[7]  = 8'b00_001_110;  // ld c imm8
+    //assign memory[8]  = 8'hCC;
+    //assign memory[9]  = 8'b01_000_001;  // ld b c
+    //assign memory[10] = 8'b11_001101;  // call 20
+    //assign memory[11] = 8'h14;
+    //assign memory[12] = 8'h00;
+    //assign memory[13] = 8'b00_01_0011;  // inc de
+    //assign memory[14] = 8'b01110110;  // halt
+    //assign memory[20] = 8'b11_000_110;  // add a 7
+    //assign memory[21] = 8'h07;
+    //assign memory[22] = 8'b11_001001;  // ret
 
 
     //assign memory[ 0] = 8'b00_00_0001; // ld bc 0xBEEF
@@ -84,6 +96,11 @@ module gb_cpu_tb ();
     end
 
     initial begin
+
+        for (int i = 0; i < 65536; i++) memory[i] = 8'h00;
+
+        $readmemh("./test/roms/03-op-sp-hl.gb", memory, 0, 32768);
+
         $dumpfile("gb_cpu_tb.fst");
         $dumpvars();
 
@@ -92,10 +109,9 @@ module gb_cpu_tb ();
         #1;
         reset = 1'b0;
 
-        repeat (30) begin
+        repeat (1000) begin
             #1;
             @(posedge clk);
-            #1;
         end
 
         $finish();

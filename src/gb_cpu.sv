@@ -120,9 +120,9 @@ module gb_cpu (
         endcase
     endfunction : conditionCheck
     // The condition code is always contained in bits [4:3] of the opcode
-    assign cond_not_met = curr_controls.cc_check ? ~conditionCheck(
-        condition_code_t'(registers.ir[4:3]), alu_flags_o
-    ) : 1'b0;
+    condition_code_t opcode_cond;
+    assign opcode_cond  = condition_code_t'(registers.ir[4:3]);
+    assign cond_not_met = curr_controls.cc_check ? ~conditionCheck(opcode_cond, alu_flags_i) : 1'b0;
 
     // Handle the output Address Bus
     always_comb begin : addrBusControl
