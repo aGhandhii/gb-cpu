@@ -1589,7 +1589,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].idu_wren               = 1'b1;
             schedule.instruction_controls[1].alu_opcode             = alu_opcode;
             schedule.instruction_controls[1].alu_operand_a_register = REG_A;
-            schedule.instruction_controls[1].alu_operand_b_register = operand_b;
+            schedule.instruction_controls[1].alu_operand_b_register = REG_TMP_L;
             schedule.instruction_controls[1].alu_inc_dec            = 1'b0;
             schedule.instruction_controls[1].alu_destination        = REG_A;
             schedule.instruction_controls[1].alu_wren               = writeResult;

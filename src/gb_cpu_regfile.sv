@@ -145,7 +145,7 @@ module gb_cpu_regfile (
             end
 
             if (add_adj_pc) begin
-                {registers.tmp_hi, registers.tmp_lo} <= ({registers.pc_hi, registers.pc_lo} - 16'd1) + {registers.tmp_hi, registers.tmp_lo};
+                {registers.tmp_hi, registers.tmp_lo} <= {registers.pc_hi, registers.pc_lo} + {registers.tmp_hi, registers.tmp_lo};
             end else if (set_adj) begin
                 registers.tmp_hi <= {8{registers.tmp_lo[7]}};
                 registers.tmp_lo <= registers.tmp_lo;

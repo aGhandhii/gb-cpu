@@ -37,6 +37,7 @@ module gb_cpu_scheduler (
 
     // Internal Signals
     logic load_from_schedule;
+    logic cond_not_met_last;
 
     // Combinational Logic : set control signals
     always_comb begin
@@ -81,14 +82,16 @@ module gb_cpu_scheduler (
         if (reset | cond_not_met) begin
             // This is a single-cycle instruction
             load_from_schedule <= 1'b0;
+            cond_not_met_last  <= cond_not_met;
             next_m_cycle       <= 3'd0;
             cb_prefix_o        <= 1'b0;
             isr_cmd            <= 1'b0;
         end else if (curr_m_cycle == 3'd0) begin
             // Load the next cycle count
-            next_m_cycle       <= schedule.m_cycles;
+            next_m_cycle       <= cond_not_met_last ? 3'd0 : schedule.m_cycles;
             // Load in the next instruction
             load_from_schedule <= 1'b1;
+            cond_not_met_last  <= 1'b0;
             // Check for 0xCB prefixing
             cb_prefix_o        <= schedule.cb_prefix_next ? 1'b1 : 1'b0;
             // Check for ISR request
@@ -99,6 +102,7 @@ module gb_cpu_scheduler (
             next_m_cycle       <= curr_m_cycle - 3'd1;
             // Load in the next instruction
             load_from_schedule <= 1'b1;
+            cond_not_met_last  <= 1'b0;
             cb_prefix_o        <= cb_prefix_o;
             isr_cmd            <= isr_cmd;
         end

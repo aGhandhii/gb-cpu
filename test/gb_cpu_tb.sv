@@ -24,12 +24,12 @@ module gb_cpu_tb ();
         reg_IE = memory[16'hFFFF];
     end
 
-    // print blargg test results
-    always_ff @(posedge clk)
-        if (memory[16'hFF02] == 8'h81) begin
-            $write("%s", memory[16'hFF01]);
-            memory[16'hFF02] <= 8'd0;
-        end
+    //// print blargg test results
+    //always_ff @(posedge clk)
+    //    if (memory[16'hFF02] == 8'h81) begin
+    //        $write("%s", memory[16'hFF01]);
+    //        memory[16'hFF02] <= 8'd0;
+    //    end
 
     // Interrupt Flag
     always_ff @(posedge clk)
@@ -41,54 +41,10 @@ module gb_cpu_tb ();
             else if (reg_IF[4]) memory[16'hFF0F] <= reg_IF ^ 8'h10;
             else memory[16'hFF0F] <= reg_IF;
 
-    //assign memory[0]  = 8'b11_000_110;  // add a, 5
-    //assign memory[1]  = 8'h05;
-    //assign memory[2]  = 8'b11_010_110;  // sub a, 2
-    //assign memory[3]  = 8'h02;
-    //assign memory[4]  = 8'b00_01_0011;  // inc de
-    //assign memory[5]  = 8'b00_01_0011;  // inc de
-    //assign memory[6]  = 8'b00_01_1011;  // dec de
-    //assign memory[7]  = 8'b00_001_110;  // ld c imm8
-    //assign memory[8]  = 8'hCC;
-    //assign memory[9]  = 8'b01_000_001;  // ld b c
-    //assign memory[10] = 8'b11_001101;  // call 20
-    //assign memory[11] = 8'h14;
-    //assign memory[12] = 8'h00;
-    //assign memory[13] = 8'b00_01_0011;  // inc de
-    //assign memory[14] = 8'b01110110;  // halt
-    //assign memory[20] = 8'b11_000_110;  // add a 7
-    //assign memory[21] = 8'h07;
-    //assign memory[22] = 8'b11_001001;  // ret
+    // Help with conditional prints
+    logic cond_fail;
+    always_ff @(posedge clk) cond_fail <= dut.curr_controls.cc_check ? dut.cond_not_met : 1'b0;
 
-
-    //assign memory[ 0] = 8'b00_00_0001; // ld bc 0xBEEF
-    //assign memory[ 1] = 8'hEF;
-    //assign memory[ 2] = 8'hBE;
-    //assign memory[ 3] = 8'b00_10_0001; // ld hl 0xDEAD
-    //assign memory[ 4] = 8'hAD;
-    //assign memory[ 5] = 8'hDE;
-    //assign memory[ 6] = 8'b11_111001;  // ld sp, hl
-    //assign memory[ 7] = 8'b11_00_0101; // push bc
-    //assign memory[ 8] = 8'b11_01_0001; // pop de
-    //assign memory[ 9] = 8'b01110110;   // halt
-
-    //assign memory[ 7] = 8'hCB;
-    //assign memory[ 8] = 8'b00_110_001; // swap c
-    //assign memory[ 9] = 8'hCB;
-    //assign memory[10] = 8'b10_110_001; // res c 6
-    //assign memory[11] = 8'hCB;
-    //assign memory[12] = 8'b11_110_001; // set c 6
-    //assign memory[13] = 8'b11_111011;  // ei
-    //assign memory[14] = 8'b11_110011;  // di
-    //assign memory[15] = 8'b01110110;   // halt
-
-    //assign memory[ 0] = 8'h18;         // jr + 1 + 9
-    //assign memory[ 1] = 8'h09;
-    //assign memory[ 7] = 8'b00_001_110; // ld c 0xCC
-    //assign memory[ 8] = 8'hCC;
-    //assign memory[ 9] = 8'b01110110;   // halt
-    //assign memory[10] = 8'h18;         // jr + 1 - 4
-    //assign memory[11] = 8'hFC;
 
     initial begin
         clk = 1'b0;
@@ -98,6 +54,8 @@ module gb_cpu_tb ();
     initial begin
 
         for (int i = 0; i < 65536; i++) memory[i] = 8'h00;
+
+        memory[16'hFF44] = 8'h90;
 
         $readmemh("./test/roms/03-op-sp-hl.gb", memory, 0, 32768);
 
@@ -109,9 +67,35 @@ module gb_cpu_tb ();
         #1;
         reset = 1'b0;
 
-        repeat (1000) begin
+        repeat (99999) begin
             #1;
             @(posedge clk);
+            if (dut.registers.ir != 8'hCB)
+                if ((dut.curr_m_cycle == 3'd0)&&(dut.schedule.m_cycles == 3'd0) || (dut.curr_m_cycle == 3'd1)&&(dut.schedule.m_cycles != 3'd0) || cond_fail) begin
+
+                    logic [15:0] addr, addr1, addr2, addr3;
+
+                    if (dut.curr_controls.idu_destination == REG_PC && dut.curr_controls.idu_operand == REG_PC && dut.curr_controls.idu_opcode == IDU_INC) begin
+                        addr  = {dut.registers.pc_hi, dut.registers.pc_lo};
+                        addr1 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd1;
+                        addr2 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd2;
+                        addr3 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd3;
+                        #2;  // let values resolve
+                    end else begin
+                        #2;  // let values resolve
+                        addr  = {dut.registers.pc_hi, dut.registers.pc_lo} - 16'd1;
+                        addr1 = {dut.registers.pc_hi, dut.registers.pc_lo};
+                        addr2 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd1;
+                        addr3 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd2;
+                    end
+
+                    $display(
+                        "A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%02x%02x PC:%04x PCMEM:%02x,%02x,%02x,%02x",
+                        dut.registers.a, dut.registers.f, dut.registers.b, dut.registers.c, dut.registers.d,
+                        dut.registers.e, dut.registers.h, dut.registers.l, dut.registers.sp_hi, dut.registers.sp_lo,
+                        cond_fail ? {dut.registers.pc_hi, dut.registers.pc_lo} : ({dut.registers.pc_hi, dut.registers.pc_lo} - 16'd1),
+                        memory[addr], memory[addr1], memory[addr2], memory[addr3]);
+                end
         end
 
         $finish();
