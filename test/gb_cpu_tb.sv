@@ -45,7 +45,6 @@ module gb_cpu_tb ();
     logic cond_fail;
     always_ff @(posedge clk) cond_fail <= dut.curr_controls.cc_check ? dut.cond_not_met : 1'b0;
 
-
     initial begin
         clk = 1'b0;
         forever #10 clk = ~clk;
