@@ -83,6 +83,44 @@ module gb_cpu (
         end
     end : aluInputs
 
+    // Handle Flag Updates
+    alu_flags_t alu_flags_next;
+    always_comb begin : aluFlags
+        if (curr_controls.add_adj) alu_flags_next = alu_flags_i;
+        else if (cb_prefix) alu_flags_next = alu_flags_o;
+        else begin
+            // Certain opcodes require special flag modifiers
+            case (registers.ir) inside
+
+                8'b00_??_1001: begin
+                    // add HL r16
+                    // make sure the Z flag is not impacted
+                    alu_flags_next.Z = alu_flags_i.Z;
+                    alu_flags_next.N = alu_flags_o.N;
+                    alu_flags_next.H = alu_flags_o.H;
+                    alu_flags_next.C = alu_flags_o.C;
+                end
+
+                8'b11_101000, 8'hF8: begin
+                    // add sp imm8, ld HL SP+e
+                    // force Z to 0
+                    alu_flags_next.Z = 1'b0;
+                    alu_flags_next.N = alu_flags_o.N;
+                    alu_flags_next.H = alu_flags_o.H;
+                    alu_flags_next.C = alu_flags_o.C;
+                end
+
+                8'b00_011000, 8'b00_1??000: begin
+                    // jr (relative jump) instructions
+                    alu_flags_next = alu_flags_i;
+                end
+
+                default: alu_flags_next = alu_flags_o;
+
+            endcase
+        end
+    end : aluFlags
+
     // Handle IME register
     logic enable_interrupts_delayed;
     always_ff @(posedge clk) begin
@@ -137,10 +175,7 @@ module gb_cpu (
     // Handle the output Data Bus
     always_comb begin : dataBusControl
         drive_data_bus = curr_controls.drive_data_bus;
-        // set data_o to ALU output for certain operations to prevent race conditions for memory writes
-        if (curr_controls.drive_data_bus && curr_controls.alu_wren && (curr_controls.data_bus_o_source == curr_controls.alu_destination))
-            data_o = alu_o;
-        else data_o = getRegister8(registers, curr_controls.data_bus_o_source);
+        data_o = getRegister8(registers, curr_controls.data_bus_o_source);
     end : dataBusControl
 
 
@@ -154,7 +189,7 @@ module gb_cpu (
         .reset(reset),
         .alu_req(curr_controls.alu_destination),
         .alu_data(alu_o),
-        .alu_flags(curr_controls.add_adj ? alu_flags_i : alu_flags_o),
+        .alu_flags(alu_flags_next),
         .alu_wren(curr_controls.alu_wren),
         .idu_req(curr_controls.idu_destination),
         .idu_data(idu_o),

@@ -18,10 +18,13 @@ module gb_cpu_tb ();
 
     always_ff @(posedge clk) memory[addr_o] <= drive_data_bus ? data_o : memory[addr_o];
 
+    logic [7:0] debug_mem;
+
     always_comb begin
         data_i = memory[addr_o];
         reg_IF = memory[16'hFF0F];
         reg_IE = memory[16'hFFFF];
+        debug_mem = memory[16'hD81B];
     end
 
     //// print blargg test results
@@ -66,7 +69,7 @@ module gb_cpu_tb ();
         #1;
         reset = 1'b0;
 
-        repeat (99999) begin
+        repeat (9999999) begin
             #1;
             @(posedge clk);
             if (dut.registers.ir != 8'hCB)

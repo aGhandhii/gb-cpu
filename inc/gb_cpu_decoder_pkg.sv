@@ -1672,7 +1672,7 @@ package gb_cpu_decoder_pkg;
         if (addSP) begin
             // Relative add to Stack Pointer - 4 M cycles
             schedule.m_cycles                                       = 3'd3;
-            // Cycle 1 - obtain signed immediate from memory
+            // Cycle 1 - obtain signed immediate from memory, increment Program Counter
             schedule.instruction_controls[0].addr_bus_source        = ADDR_BUS_REG16;
             schedule.instruction_controls[0].addr_bus_source_r8     = regfile_r8_t'(4'hx);
             schedule.instruction_controls[0].addr_bus_source_r16    = REG_PC;
@@ -1681,8 +1681,8 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].drive_data_bus         = 1'b0;
             schedule.instruction_controls[0].receive_data_bus       = 1'b1;
             schedule.instruction_controls[0].idu_opcode             = IDU_INC;
-            schedule.instruction_controls[0].idu_operand            = REG_SP;
-            schedule.instruction_controls[0].idu_destination        = REG_SP;
+            schedule.instruction_controls[0].idu_operand            = REG_PC;
+            schedule.instruction_controls[0].idu_destination        = REG_PC;
             schedule.instruction_controls[0].idu_wren               = 1'b1;
             schedule.instruction_controls[0].alu_opcode             = ALU_NOP;
             schedule.instruction_controls[0].alu_operand_a_register = regfile_r8_t'(4'hx);
@@ -1742,7 +1742,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[2].idu_wren               = 1'b0;
             schedule.instruction_controls[2].alu_opcode             = ADC;
             schedule.instruction_controls[2].alu_operand_a_register = REG_SP_H;
-            schedule.instruction_controls[2].alu_operand_b_register = regfile_r8_t'(4'hx);
+            schedule.instruction_controls[2].alu_operand_b_register = REG_TMP_H;
             schedule.instruction_controls[2].alu_inc_dec            = 1'b0;
             schedule.instruction_controls[2].alu_destination        = REG_TMP_H;
             schedule.instruction_controls[2].alu_wren               = 1'b1;
@@ -2312,7 +2312,7 @@ package gb_cpu_decoder_pkg;
         end else if (jumpRelative) begin
             // 3 cycles - jump to current address + sign-extended 8 bit immediate
             schedule.m_cycles                                       = 3'd2;
-            // Cycle 1 - get immediate lsb, increment PC, set adjustment (conditional) check condition code
+            // Cycle 1 - get immediate lsb, increment PC (conditional) check condition code
             schedule.instruction_controls[0].addr_bus_source        = ADDR_BUS_REG16;
             schedule.instruction_controls[0].addr_bus_source_r8     = regfile_r8_t'(4'hx);
             schedule.instruction_controls[0].addr_bus_source_r16    = REG_PC;
@@ -2338,7 +2338,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[0].cc_check               = conditional;
             schedule.instruction_controls[0].overwrite_wren         = 1'b0;
             schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
-            schedule.instruction_controls[0].set_adj                = 1'b1;
+            schedule.instruction_controls[0].set_adj                = 1'b0;
             schedule.instruction_controls[0].add_adj                = 1'b0;
             // Cycle 2 - set TMP to the sum of the adjusted immediate and the Program Counter (set both ei and di for this signal)
             schedule.instruction_controls[1].addr_bus_source        = ADDR_BUS_ZERO;
@@ -2366,7 +2366,7 @@ package gb_cpu_decoder_pkg;
             schedule.instruction_controls[1].cc_check               = 1'b0;
             schedule.instruction_controls[1].overwrite_wren         = 1'b0;
             schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
-            schedule.instruction_controls[1].set_adj                = 1'b0;
+            schedule.instruction_controls[1].set_adj                = 1'b1;
             schedule.instruction_controls[1].add_adj                = 1'b0;
             // Cycle 3 - fetch instruction at TMP, set Program Counter to TMP+1
             schedule.instruction_controls[2].addr_bus_source        = ADDR_BUS_REG16;

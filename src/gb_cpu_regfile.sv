@@ -146,9 +146,6 @@ module gb_cpu_regfile (
 
             if (add_adj_pc) begin
                 {registers.tmp_hi, registers.tmp_lo} <= {registers.pc_hi, registers.pc_lo} + {registers.tmp_hi, registers.tmp_lo};
-            end else if (set_adj) begin
-                registers.tmp_hi <= {8{registers.tmp_lo[7]}};
-                registers.tmp_lo <= registers.tmp_lo;
             end else begin
                 registers.tmp_hi <= multiSourceWrite(registers.tmp_hi, REG_TMP_H, idu_data_hi, idu_req_hi, idu_wren);
                 registers.tmp_lo <= multiSourceWrite(registers.tmp_lo, REG_TMP_L, idu_data_lo, idu_req_lo, idu_wren);
@@ -178,6 +175,8 @@ module gb_cpu_regfile (
 
         if (restart_cmd)
             registers.tmp_hi <= 8'd0;
+        else if (set_adj)
+            registers.tmp_hi <= {8{registers.tmp_lo[7]}};
         else if ((data_bus_req == REG_TMP_H) && data_bus_wren)
             registers.tmp_hi <= data_bus_data;
         else
