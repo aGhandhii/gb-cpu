@@ -46,6 +46,14 @@ module gb_cpu_alu_tb ();
         $dumpfile("gb_cpu_alu_tb.fst");
         $dumpvars();
 
+        flags_i.Z = 1'b1;
+        flags_i.N = 1'b1;
+        flags_i.H = 1'b1;
+        flags_i.C = 1'b0;
+        instruction.operand_a = 8'd0;
+        instruction.opcode = DAA;
+        #1;
+
         //for (int i = 0; i < 10; i++) begin : testNoOp
         //    instruction.operand_a = getRandOperand();
         //    instruction.operand_b = getRandOperand();

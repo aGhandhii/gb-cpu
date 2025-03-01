@@ -56,7 +56,7 @@ module gb_cpu_tb ();
 
         memory[16'hFF44] = 8'h90;
 
-        $readmemh("./test/roms/11-op-a-hl.gb", memory, 0, 32768);
+        $readmemh("./test/roms/10-bit-op.gb", memory, 0, 32768);
 
         $dumpfile("gb_cpu_tb.fst");
         $dumpvars();

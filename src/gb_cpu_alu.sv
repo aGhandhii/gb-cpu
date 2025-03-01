@@ -116,15 +116,15 @@ module gb_cpu_alu (
                         end
                         2'b01: begin
                             out = instruction.operand_a - 8'h06;
-                            flags_o.C = (8'h06 > instruction.operand_a);
+                            flags_o.C = 1'b0;
                         end
                         2'b10: begin
                             out = instruction.operand_a - 8'h60;
-                            flags_o.C = (8'h60 > instruction.operand_a);
+                            flags_o.C = 1'b1;
                         end
                         2'b11: begin
                             out = instruction.operand_a - 8'h66;
-                            flags_o.C = (8'h66 > instruction.operand_a);
+                            flags_o.C = 1'b1;
                         end
                         default: begin
                             out = 8'hFF;
@@ -141,8 +141,14 @@ module gb_cpu_alu (
                             flags_o.C = 1'b0;
                         end
                         2'b01: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h06;
-                        2'b10: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h60;
-                        2'b11: {flags_o.C, out} = {1'b0, instruction.operand_a} + 9'h66;
+                        2'b10: begin
+                            out = instruction.operand_a + 8'h60;
+                            flags_o.C = 1'b1;
+                        end
+                        2'b11: begin
+                            out = instruction.operand_a + 8'h66;
+                            flags_o.C = 1'b1;
+                        end
                         default: begin
                             out = 8'hFF;
                             flags_o.C = 1'bx;
