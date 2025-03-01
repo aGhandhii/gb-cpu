@@ -126,7 +126,7 @@ module gb_cpu_regfile (
             registers.ir        <= ir_updated;
 
             registers.a         <= multiSourceWrite(registers.a,     REG_A,    registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
-            registers.f         <= multiSourceWrite(registers.f,     REG_F,    registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
+            registers.f         <= {multiSourceWrite(registers.f,    REG_F,    registers.tmp_lo, overwrite_req_lo, overwrite_wren)[7:4], 4'h0};
             registers.b         <= multiSourceWrite(registers.b,     REG_B,    registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
             registers.c         <= multiSourceWrite(registers.c,     REG_C,    registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
             registers.d         <= multiSourceWrite(registers.d,     REG_D,    registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);

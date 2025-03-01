@@ -18,13 +18,10 @@ module gb_cpu_tb ();
 
     always_ff @(posedge clk) memory[addr_o] <= drive_data_bus ? data_o : memory[addr_o];
 
-    logic [7:0] debug_mem;
-
     always_comb begin
         data_i = memory[addr_o];
         reg_IF = memory[16'hFF0F];
         reg_IE = memory[16'hFFFF];
-        debug_mem = memory[16'hD81B];
     end
 
     //// print blargg test results
@@ -59,7 +56,7 @@ module gb_cpu_tb ();
 
         memory[16'hFF44] = 8'h90;
 
-        $readmemh("./test/roms/03-op-sp-hl.gb", memory, 0, 32768);
+        $readmemh("./test/roms/11-op-a-hl.gb", memory, 0, 32768);
 
         $dumpfile("gb_cpu_tb.fst");
         $dumpvars();
@@ -69,10 +66,10 @@ module gb_cpu_tb ();
         #1;
         reset = 1'b0;
 
-        repeat (9999999) begin
+        repeat (19999999) begin
             #1;
             @(posedge clk);
-            if (dut.registers.ir != 8'hCB)
+            if (dut.registers.ir != 8'hCB || (dut.registers.ir == 8'hCB && dut.cb_prefix == 1'b1))
                 if ((dut.curr_m_cycle == 3'd0)&&(dut.schedule.m_cycles == 3'd0) || (dut.curr_m_cycle == 3'd1)&&(dut.schedule.m_cycles != 3'd0) || cond_fail) begin
 
                     logic [15:0] addr, addr1, addr2, addr3;

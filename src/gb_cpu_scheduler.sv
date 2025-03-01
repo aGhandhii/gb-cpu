@@ -12,7 +12,7 @@ Also handles event-driven cases:
 Inputs:
     clk                 - Machine (M) Clock
     reset               - System Reset
-    schedule            - Instruction <S-Del>Sschedule for the Current Opcode
+    schedule            - Instruction Schedule for the Current Opcode
     curr_m_cycle        - M-cycle Counter for Current Instruction
     cond_not_met        - If a Condition Check was Executed but Failed
     interrupt_queued    - If the Next Instruction will be the ISR
@@ -38,6 +38,7 @@ module gb_cpu_scheduler (
     // Internal Signals
     logic load_from_schedule;
     logic cond_not_met_last;
+    logic cb_prefix_last;
 
     // Combinational Logic : set control signals
     always_comb begin
@@ -86,14 +87,17 @@ module gb_cpu_scheduler (
             next_m_cycle       <= 3'd0;
             cb_prefix_o        <= 1'b0;
             isr_cmd            <= 1'b0;
+            cb_prefix_last     <= 1'b0;
         end else if (curr_m_cycle == 3'd0) begin
             // Load the next cycle count
             next_m_cycle       <= cond_not_met_last ? 3'd0 : schedule.m_cycles;
             // Load in the next instruction
             load_from_schedule <= 1'b1;
             cond_not_met_last  <= 1'b0;
+            cb_prefix_last     <= schedule.cb_prefix_next;
             // Check for 0xCB prefixing
-            cb_prefix_o        <= schedule.cb_prefix_next ? 1'b1 : 1'b0;
+            if (schedule.cb_prefix_next || ((cb_prefix_o == 1'b1) && (schedule.m_cycles > 3'd0))) cb_prefix_o <= 1'b1;
+            else cb_prefix_o <= 1'b0;
             // Check for ISR request
             if (schedule.cb_prefix_next) isr_cmd <= 1'b0;
             else isr_cmd <= interrupt_queued ? 1'b1 : 1'b0;
@@ -103,7 +107,8 @@ module gb_cpu_scheduler (
             // Load in the next instruction
             load_from_schedule <= 1'b1;
             cond_not_met_last  <= 1'b0;
-            cb_prefix_o        <= cb_prefix_o;
+            cb_prefix_last     <= 1'b0;
+            cb_prefix_o        <= (curr_m_cycle == 3'd1) ? 1'b0 : cb_prefix_o;
             isr_cmd            <= isr_cmd;
         end
     end

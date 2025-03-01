@@ -110,8 +110,8 @@ module gb_cpu (
                     alu_flags_next.C = alu_flags_o.C;
                 end
 
-                8'b00_011000, 8'b00_1??000: begin
-                    // jr (relative jump) instructions
+                8'b00_011000, 8'b00_1??000, 8'b11_???_111: begin
+                    // jr (relative jump) and rst (restart) instructions
                     alu_flags_next = alu_flags_i;
                 end
 

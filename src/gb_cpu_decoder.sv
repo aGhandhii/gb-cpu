@@ -136,7 +136,7 @@ module gb_cpu_decoder (
                 8'b00_???_101: schedule = arithmetic8Bit(.alu_opcode(DEC), .r8(opcode_r8_t'(opcode[5:3])), .incDec(1'b1));  // dec r8
 
                 8'b00_100111:  schedule = arithmetic8Bit(.alu_opcode(DAA), .writeResult(1'b0));  // daa
-                8'b00_101111:  schedule = arithmetic8Bit(.alu_opcode(CPL), .writeResult(1'b0));  // cpl
+                8'b00_101111:  schedule = arithmetic8Bit(.alu_opcode(CPL));  // cpl
                 8'b00_110111:  schedule = arithmetic8Bit(.alu_opcode(SCF), .writeResult(1'b0));  // scf
                 8'b00_111111:  schedule = arithmetic8Bit(.alu_opcode(CCF), .writeResult(1'b0));  // ccf
 
