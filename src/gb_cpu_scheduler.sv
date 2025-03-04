@@ -100,7 +100,7 @@ module gb_cpu_scheduler (
             else cb_prefix_o <= 1'b0;
             // Check for ISR request
             if (schedule.cb_prefix_next) isr_cmd <= 1'b0;
-            else isr_cmd <= interrupt_queued ? 1'b1 : 1'b0;
+            else isr_cmd <= interrupt_queued;
         end else begin
             // Decrement the cycle count for the instruction
             next_m_cycle       <= curr_m_cycle - 3'd1;

@@ -101,8 +101,7 @@ package gb_cpu_decoder_pkg;
         schedule.bit_cmd                                        = 1'b0;
         schedule.cb_prefix_next                                 = 1'b0;
         blankSchedule                                           = emptySchedule();
-
-        // Cycle 1 - Decrement Stack so Program Counter can be saved
+        // Cycle 1 - Decrement Stack Pointer
         schedule.instruction_controls[0].addr_bus_source        = ADDR_BUS_REG16;
         schedule.instruction_controls[0].addr_bus_source_r8     = regfile_r8_t'(4'hx);
         schedule.instruction_controls[0].addr_bus_source_r16    = REG_SP;
@@ -130,7 +129,7 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[0].overwrite_req          = regfile_r16_t'(3'bxxx);
         schedule.instruction_controls[0].set_adj                = 1'b0;
         schedule.instruction_controls[0].add_adj                = 1'b0;
-        // Cycle 2 - Push High Byte of Program Counter to the Stack
+        // Cycle 2 - Push msb of PC to SP, decrement SP
         schedule.instruction_controls[1].addr_bus_source        = ADDR_BUS_REG16;
         schedule.instruction_controls[1].addr_bus_source_r8     = regfile_r8_t'(4'hx);
         schedule.instruction_controls[1].addr_bus_source_r16    = REG_SP;
@@ -158,7 +157,7 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[1].overwrite_req          = regfile_r16_t'(3'bxxx);
         schedule.instruction_controls[1].set_adj                = 1'b0;
         schedule.instruction_controls[1].add_adj                = 1'b0;
-        // Cycle 3 - Push Low Byte of Program Counter to the Stack
+        // Cycle 3 - Push lsb PC to SP
         schedule.instruction_controls[2].addr_bus_source        = ADDR_BUS_REG16;
         schedule.instruction_controls[2].addr_bus_source_r8     = regfile_r8_t'(4'hx);
         schedule.instruction_controls[2].addr_bus_source_r16    = REG_SP;
@@ -186,7 +185,7 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[2].overwrite_req          = regfile_r16_t'(3'bxxx);
         schedule.instruction_controls[2].set_adj                = 1'b0;
         schedule.instruction_controls[2].add_adj                = 1'b0;
-        // Cycle 4 - Load the Interrupt Vector into the Program Counter, Clear IF flag, Disable Interrupts
+        // Cycle 4 - Load Interrupt Vector to PC, Clear IF flag, Disable Interrupts
         schedule.instruction_controls[3].addr_bus_source        = ADDR_BUS_REG16;
         schedule.instruction_controls[3].addr_bus_source_r8     = regfile_r8_t'(4'hx);
         schedule.instruction_controls[3].addr_bus_source_r16    = regfile_r16_t'(3'bxxx);
@@ -210,8 +209,8 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[3].clear_interrupt_flag   = 1'b1;
         schedule.instruction_controls[3].rst_cmd                = 1'b0;
         schedule.instruction_controls[3].cc_check               = 1'b0;
-        schedule.instruction_controls[3].overwrite_wren         = 1'b1;
-        schedule.instruction_controls[3].overwrite_req          = REG_PC;
+        schedule.instruction_controls[3].overwrite_wren         = 1'b0;
+        schedule.instruction_controls[3].overwrite_req          = regfile_r16_t'(3'bxxx);
         schedule.instruction_controls[3].set_adj                = 1'b0;
         schedule.instruction_controls[3].add_adj                = 1'b0;
         // Cycle 5 - Load the next instruction to IR, do not increment Program Counter
@@ -242,9 +241,11 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[4].overwrite_req          = regfile_r16_t'(3'bxxx);
         schedule.instruction_controls[4].set_adj                = 1'b0;
         schedule.instruction_controls[4].add_adj                = 1'b0;
-        // Fill remaining instruction slots
+        // Fill remaining instruction slot
         schedule.instruction_controls[5]                        = blankSchedule.instruction_controls[5];
+
         return schedule;
+
     endfunction : interruptServiceRoutine
 
     // }}}
