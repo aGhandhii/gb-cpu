@@ -20,6 +20,7 @@ module gb_timer_tb ();
     task automatic sysReset();
         reset = 1'b1;
         @(posedge clk);
+        #2;
         reset = 1'b0;
     endtask : sysReset
 
@@ -28,6 +29,7 @@ module gb_timer_tb ();
         addr   = 16'hFF07;
         data_i = data;
         @(posedge clk);
+        #2;
         wren = 0;
     endtask : writeTAC
 
@@ -36,6 +38,7 @@ module gb_timer_tb ();
         addr   = 16'hFF05;
         data_i = data;
         @(posedge clk);
+        #2;
         wren = 0;
     endtask : writeTIMA
 
@@ -44,6 +47,7 @@ module gb_timer_tb ();
         addr   = 16'hFF06;
         data_i = data;
         @(posedge clk);
+        #2;
         wren = 0;
     endtask : writeTMA
 
@@ -52,6 +56,7 @@ module gb_timer_tb ();
         addr   = 16'hFF04;
         data_i = data;
         @(posedge clk);
+        #2;
         wren = 0;
     endtask : writeDIV
 
@@ -66,7 +71,17 @@ module gb_timer_tb ();
         writeTMA(8'hFE);
         writeTIMA(8'hFF);
 
-        repeat (5000) @(posedge clk);
+        repeat (254) begin
+            @(posedge clk);
+            #2;
+        end
+
+        writeTMA(8'hEE);
+
+        repeat (5000) begin
+            @(posedge clk);
+            #2;
+        end
 
         $finish();
     end

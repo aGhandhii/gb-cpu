@@ -5,6 +5,10 @@ This currently implements the timer for the DMG model, not the CGB model
 TODO: Color - KEY1 register controls Double-Speed mode
 TODO: Suspend system counter in STOP mode
 
+The overflow on TIMA takes 2 cycles while in actual hardware this only takes
+a single cycle - as the physical register is a toggle flip flop, not clocked
+    - do I need to implement this behavior?
+
 Inputs:
     clk                     - Machine (M) Clock
     reset                   - System Reset
@@ -72,12 +76,12 @@ module gb_timer (
     // If TIMA overflows, attempt an interrupt request
     logic TIMA_overflow;
     always_ff @(posedge clk) TIMA_overflow <= 1'b0;
-    always_ff @(negedge reg_TIMA[7]) TIMA_overflow <= 1'b1;
+    always_ff @(negedge reg_TIMA[7]) if (~(TIMA_write_req | irq_timer)) TIMA_overflow <= 1'b1;
 
     // Delay the interrupt request by one cycle
     always_ff @(posedge clk, posedge reset)
-        if (reset) irq_timer <= 1'b0;
-        else irq_timer <= ~(TIMA_write_req | irq_timer) & TIMA_overflow;
+        if (reset | TIMA_write_req | irq_timer) irq_timer <= 1'b0;
+        else irq_timer <= TIMA_overflow;
 
     // Handle Write Requests to TIMA and TMA
     always_ff @(posedge clk, posedge reset)
@@ -88,8 +92,8 @@ module gb_timer (
             if (TMA_write_req) reg_TMA <= data_i;
             else reg_TMA <= reg_TMA;
 
-            if (TIMA_write_req | irq_timer)
-                if (TIMA_write_req & TMA_write_req) reg_TIMA <= data_i;
+            if (TIMA_write_req | TIMA_overflow)
+                if (TMA_write_req | (TIMA_write_req & ~TIMA_overflow)) reg_TIMA <= data_i;
                 else reg_TIMA <= reg_TMA;
             else if (timerTick) reg_TIMA <= reg_TIMA + 8'h01;
             else reg_TIMA <= reg_TIMA;
