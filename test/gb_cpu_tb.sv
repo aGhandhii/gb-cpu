@@ -74,9 +74,10 @@ module gb_cpu_tb ();
 
         memory[16'hFF44] = 8'h90;
 
-        $readmemh("./test/roms/01-special.gb", memory, 0, 32768);
+        //$readmemh("./test/roms/01-special.gb", memory, 0, 32768);
         //$readmemh("./test/roms/02-interrupts.gb", memory, 0, 32768);
         //$readmemh("./test/roms/03-op-sp-hl.gb", memory, 0, 32768);
+        $readmemh("./test/roms/04-op-r-imm.gb", memory, 0, 32768);
 
         $dumpfile("gb_cpu_tb.fst");
         $dumpvars();

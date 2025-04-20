@@ -176,11 +176,11 @@ module gb_cpu_decoder (
                 ///////////////////
                 8'h00:         schedule = miscOp(); // No Op
                 8'hCB:         schedule = miscOp(.cbNext(1'b1)); // schedule a 0xCB prefixed instruction next
-                //8'b00_010000:  schedule = miscOp(.stop(1'b1)); // stop TODO
                 8'b11_110011:  schedule = miscOp(.di(1'b1)); // di
                 8'b11_111011:  schedule = miscOp(.ei(1'b1)); // ei
 
-                //8'hD3, 8'hDB, 8'hDD, 8'hE3, 8'hE4, 8'hEB, 8'hEC, 8'hED, 8'hF4, 8'hFC, 8'hFD: // Hard Lock TODO
+                8'h10:         schedule = miscOp(.stop(1'b1)); // stop TODO
+                8'hD3, 8'hDB, 8'hDD, 8'hE3, 8'hE4, 8'hEB, 8'hEC, 8'hED, 8'hF4, 8'hFC, 8'hFD: schedule = miscOp(.stop(1'b1)); // Illegal Opcodes TODO
 
                 default: schedule = emptySchedule();
 
