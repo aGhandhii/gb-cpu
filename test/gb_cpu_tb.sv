@@ -77,7 +77,9 @@ module gb_cpu_tb ();
         //$readmemh("./test/roms/01-special.gb", memory, 0, 32768);
         //$readmemh("./test/roms/02-interrupts.gb", memory, 0, 32768);
         //$readmemh("./test/roms/03-op-sp-hl.gb", memory, 0, 32768);
-        $readmemh("./test/roms/04-op-r-imm.gb", memory, 0, 32768);
+        //$readmemh("./test/roms/04-op-r-imm.gb", memory, 0, 32768);
+
+        $readmemh("./test/roms/instr_timing.gb", memory, 0, 32768);
 
         $dumpfile("gb_cpu_tb.fst");
         $dumpvars();
@@ -87,7 +89,7 @@ module gb_cpu_tb ();
         #1;
         reset = 1'b0;
 
-        repeat (59999999) begin
+        repeat (9999999) begin
             #1;
             @(posedge clk);
 
@@ -119,6 +121,7 @@ module gb_cpu_tb ();
             //                (cond_fail | dut.interrupt_queued) ? {dut.registers.pc_hi, dut.registers.pc_lo} : ({dut.registers.pc_hi, dut.registers.pc_lo} - 16'd1),
             //                memory[addr], memory[addr1], memory[addr2], memory[addr3]);
             //        end
+
         end
 
         $finish();
