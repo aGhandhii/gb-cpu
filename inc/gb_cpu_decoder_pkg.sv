@@ -213,7 +213,7 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[3].overwrite_req          = regfile_r16_t'(3'bxxx);
         schedule.instruction_controls[3].set_adj                = 1'b0;
         schedule.instruction_controls[3].add_adj                = 1'b0;
-        // Cycle 5 - Load the next instruction to IR, do not increment Program Counter
+        // Cycle 5 - Load the next instruction to IR, increment Program Counter
         schedule.instruction_controls[4].addr_bus_source        = ADDR_BUS_REG16;
         schedule.instruction_controls[4].addr_bus_source_r8     = regfile_r8_t'(4'hx);
         schedule.instruction_controls[4].addr_bus_source_r16    = REG_PC;
@@ -221,10 +221,10 @@ package gb_cpu_decoder_pkg;
         schedule.instruction_controls[4].data_bus_o_source      = regfile_r8_t'(4'hx);
         schedule.instruction_controls[4].drive_data_bus         = 1'b0;
         schedule.instruction_controls[4].receive_data_bus       = 1'b1;
-        schedule.instruction_controls[4].idu_opcode             = IDU_NOP;
-        schedule.instruction_controls[4].idu_operand            = regfile_r16_t'(3'bxxx);
-        schedule.instruction_controls[4].idu_destination        = regfile_r16_t'(3'bxxx);
-        schedule.instruction_controls[4].idu_wren               = 1'b0;
+        schedule.instruction_controls[4].idu_opcode             = IDU_INC;
+        schedule.instruction_controls[4].idu_operand            = REG_PC;
+        schedule.instruction_controls[4].idu_destination        = REG_PC;
+        schedule.instruction_controls[4].idu_wren               = 1'b1;
         schedule.instruction_controls[4].alu_opcode             = ALU_NOP;
         schedule.instruction_controls[4].alu_operand_a_register = regfile_r8_t'(4'hx);
         schedule.instruction_controls[4].alu_operand_b_register = regfile_r8_t'(4'hx);
@@ -2963,8 +2963,7 @@ package gb_cpu_decoder_pkg;
 
     // MISCELLANEOUS INSTRUCTIONS {{{
 
-    function automatic schedule_t miscOp(logic noOp = 1'b0, logic cbNext = 1'b0, logic di = 1'b0, logic ei = 1'b0,
-                                         logic halt = 1'b0, logic stop = 1'b0);
+    function automatic schedule_t miscOp(logic cbNext = 1'b0, logic di = 1'b0, logic ei = 1'b0, logic stop = 1'b0);
 
         // Internal Variables
         schedule_t schedule, blankSchedule;
@@ -2974,7 +2973,7 @@ package gb_cpu_decoder_pkg;
         blankSchedule           = emptySchedule();
 
         // STOP might be 2-cycle? otherwise everything executes in one cycle
-        if (halt | stop) begin
+        if (stop) begin
             schedule.m_cycles                                       = 3'd0;
             // Single Cycle - literally do nothing, only interrupts can break this
             schedule.instruction_controls[0].addr_bus_source        = ADDR_BUS_REG16;

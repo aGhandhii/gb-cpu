@@ -60,7 +60,7 @@ module gb_timer (
     // Logic between DIV and Timer
     logic [3:0] divFrequencySelect;
     logic timerTickReq;
-    assign divFrequencySelect = {reg_DIV[5], reg_DIV[3], reg_DIV[1], reg_DIV[7]};
+    assign divFrequencySelect = {systemCounter[5], systemCounter[3], systemCounter[1], systemCounter[7]};
     assign timerTickReq = divFrequencySelect[TAC_frequency] & TAC_enable;
 
     // On the falling edge of a timer tick request, attempt to increment TIMA

@@ -73,7 +73,7 @@ module gb_cpu_decoder (
                 end
                 8'b01_???_???: begin
                     if (opcode == 8'b01_110_110)
-                        schedule = miscOp(.halt(1'b1)); // halt
+                        schedule = miscOp(); // halt
                     else begin
                         // first reg is [HL]
                         if (opcode[5:3] == 3'd6)
@@ -174,7 +174,7 @@ module gb_cpu_decoder (
                 ///////////////////
                 // MISCELLANEOUS //
                 ///////////////////
-                8'b00_000000:  schedule = miscOp(.noOp(1'b1)); // No Op
+                8'h00:         schedule = miscOp(); // No Op
                 8'hCB:         schedule = miscOp(.cbNext(1'b1)); // schedule a 0xCB prefixed instruction next
                 //8'b00_010000:  schedule = miscOp(.stop(1'b1)); // stop TODO
                 8'b11_110011:  schedule = miscOp(.di(1'b1)); // di

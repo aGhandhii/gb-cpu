@@ -40,15 +40,22 @@ module gb_cpu (
     // sensitive control information, giving the control signals for the
     // current m-cycle
     logic             [2:0] curr_m_cycle;
+    logic                   last_m_cycle;
     logic                   cond_not_met;
     control_signals_t       curr_controls;
     logic                   cb_prefix;
     logic                   isr_cmd;
 
+    // Detect if a cycle is the last for an instruction
+    always_comb
+        if ((schedule.m_cycles == 3'd0) && (curr_m_cycle == 3'd0)) last_m_cycle = 1'b1;
+        else if ((schedule.m_cycles != 3'd0) && (curr_m_cycle == 3'd1)) last_m_cycle = 1'b1;
+        else last_m_cycle = 1'b0;
+
     // Instructions to feed ALU and IDU
-    alu_instruction_t       alu_instruction;
-    alu_flags_t             alu_flags_i;
-    idu_instruction_t       idu_instruction;
+    alu_instruction_t alu_instruction;
+    alu_flags_t       alu_flags_i;
+    idu_instruction_t idu_instruction;
     assign alu_instruction.opcode  = curr_controls.alu_opcode;
     assign alu_flags_i.Z           = registers.f[7];
     assign alu_flags_i.N           = registers.f[6];
@@ -124,17 +131,25 @@ module gb_cpu (
     // Handle IME register
     logic enable_interrupts_delayed;
     always_ff @(posedge clk) begin
-        enable_interrupts_delayed <= curr_controls.enable_interrupts;
+        enable_interrupts_delayed <= curr_controls.enable_interrupts & ~curr_controls.disable_interrupts;
         if (reset) IME <= 1'b0;
-        else if (curr_controls.disable_interrupts) IME <= 1'b0;
+        else if (curr_controls.disable_interrupts & ~curr_controls.enable_interrupts) IME <= 1'b0;
         else if (enable_interrupts_delayed) IME <= 1'b1;
         else IME <= IME;
     end
 
     // Check if the next instruction will be an interrupt
-    logic interrupt_queued;
+    logic interrupt_queued, interrupt_queued_no_IME;
     assign interrupt_queued = (IME && ((reg_IF & reg_IE) != 8'd0)) ? 1'b1 : 1'b0;
+    assign interrupt_queued_no_IME = (~IME && ((reg_IF & reg_IE) != 8'd0)) ? 1'b1 : 1'b0;
     assign clear_interrupt_flag = curr_controls.clear_interrupt_flag;
+
+    // Additional handling for HALT and the HALT bug
+    logic halt, halt_bug_delay;
+    assign halt = (registers.ir == 8'h76) ? 1'b1 : 1'b0;
+    always_ff @(posedge clk)
+        if (halt & interrupt_queued_no_IME) halt_bug_delay <= 1'b1;
+        else halt_bug_delay <= 1'b0;
 
     // Get the corresponding interrupt_vector from IF
     logic [7:0] interrupt_vector;
@@ -203,6 +218,11 @@ module gb_cpu (
         .add_adj_pc(curr_controls.enable_interrupts & curr_controls.disable_interrupts),
         .write_interrupt_vector(curr_controls.write_interrupt_vector),
         .interrupt_vector(interrupt_vector),
+        .halt(halt),
+        .halt_bug_delay(halt_bug_delay),
+        .interrupt_queued(interrupt_queued),
+        .interrupt_queued_no_IME(interrupt_queued_no_IME),
+        .last_m_cycle(last_m_cycle),
         .restart_cmd(curr_controls.rst_cmd),
         .registers(registers)
     );
@@ -221,6 +241,7 @@ module gb_cpu (
         .reset(reset),
         .schedule(schedule),
         .curr_m_cycle(curr_m_cycle),
+        .last_m_cycle(last_m_cycle),
         .cond_not_met(cond_not_met),
         .interrupt_queued(interrupt_queued),
         .control_next(curr_controls),

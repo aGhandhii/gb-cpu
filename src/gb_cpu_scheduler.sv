@@ -14,6 +14,7 @@ Inputs:
     reset               - System Reset
     schedule            - Instruction Schedule for the Current Opcode
     curr_m_cycle        - M-cycle Counter for Current Instruction
+    last_m_cycle        - Current M-Cycle is Last for Particular Instruction
     cond_not_met        - If a Condition Check was Executed but Failed
     interrupt_queued    - If the Next Instruction will be the ISR
 
@@ -27,6 +28,7 @@ module gb_cpu_scheduler (
     input  logic                   reset,
     input  schedule_t              schedule,
     input  logic             [2:0] curr_m_cycle,
+    input  logic                   last_m_cycle,
     input  logic                   cond_not_met,
     input  logic                   interrupt_queued,
     output control_signals_t       control_next,
@@ -88,9 +90,12 @@ module gb_cpu_scheduler (
             cb_prefix_o        <= 1'b0;
             isr_cmd            <= 1'b0;
             cb_prefix_last     <= 1'b0;
-        end else if (curr_m_cycle == 3'd0) begin
+        end else if (curr_m_cycle == 3'd0 | last_m_cycle) begin
             // Load the next cycle count
-            next_m_cycle       <= cond_not_met_last ? 3'd0 : schedule.m_cycles;
+            if (interrupt_queued & last_m_cycle & ~schedule.cb_prefix_next)
+                next_m_cycle <= (curr_m_cycle == 3'd0) ? 3'd4 : 3'd0;
+            else if (curr_m_cycle != 3'd0) next_m_cycle <= 3'd0;
+            else next_m_cycle <= cond_not_met_last ? 3'd0 : schedule.m_cycles;
             // Load in the next instruction
             load_from_schedule <= 1'b1;
             cond_not_met_last  <= 1'b0;
@@ -100,7 +105,7 @@ module gb_cpu_scheduler (
             else cb_prefix_o <= 1'b0;
             // Check for ISR request
             if (schedule.cb_prefix_next) isr_cmd <= 1'b0;
-            else isr_cmd <= interrupt_queued;
+            else isr_cmd <= last_m_cycle ? interrupt_queued : isr_cmd;
         end else begin
             // Decrement the cycle count for the instruction
             next_m_cycle       <= curr_m_cycle - 3'd1;
