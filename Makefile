@@ -1,5 +1,4 @@
 # Conditional Compilation Rules
-WINDOWS         =
 WAVES			=
 ICARUS          =
 VERILATOR       = 1
@@ -17,11 +16,7 @@ TEST_LOG        = $(SIM_DIR)/$(TOP).log
 # RTL Files
 TOP             =
 TESTBENCH       = ./test/$(TOP).sv
-ifdef WINDOWS
-RTL_FILES       = $(shell fd -e sv -e svh -e v . '.\inc') $(shell fd -e sv -e svh -e v . '.\src')
-else
 RTL_FILES       = $(shell find ./inc -name '*.sv') $(shell find ./src -name '*.sv')
-endif
 
 # Synthesis Files
 PCF             = icebreaker.pcf
@@ -57,17 +52,13 @@ test: sv2v
 	mkdir -p $(SIM_DIR)
 ifdef ICARUS
 	# Simulate the design with Icarus
-ifdef WINDOWS
-	iverilog -o $(TEST_BIN) -s $(TOP) $(shell fd -I . '.\sv2v')
-else
 	iverilog -o $(TEST_BIN) -s $(TOP) $(shell find ./sv2v -name '*.v')
-endif
 	# Run simulation results
 	vvp -l $(TEST_LOG) -n $(TEST_BIN) -fst
 ifdef WAVES
 	# Loading Waveform
 	mv $(TOP).fst $(TEST_WAVE) &> /dev/null
-	surfer.exe $(TEST_WAVE) &
+	surfer $(TEST_WAVE) &
 endif
 endif
 ifdef VERILATOR
@@ -78,7 +69,7 @@ ifdef VERILATOR
 	cat $(TEST_LOG)
 	mv $(TOP).fst $(TEST_WAVE) &> /dev/null
 ifdef WAVES
-	surfer.exe $(TEST_WAVE) &
+	surfer $(TEST_WAVE) &
 endif
 endif
 
