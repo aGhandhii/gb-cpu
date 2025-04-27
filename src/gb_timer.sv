@@ -66,11 +66,6 @@ module gb_timer (
     assign divFrequencySelect = {systemCounter[5], systemCounter[3], systemCounter[1], systemCounter[7]};
     assign timerTickReq = divFrequencySelect[TAC_frequency] & TAC_enable;
 
-    // On the falling edge of a timer tick request, attempt to increment TIMA
-    //logic timerTick;
-    //always_ff @(posedge clk) timerTick <= 1'b0;
-    //always_ff @(negedge timerTickReq) timerTick <= 1'b1;
-
     // Logic between Timer and Interrupt Request
     logic TIMA_write_req, TMA_write_req;
     assign TIMA_write_req = (wren && (addr == 16'hFF05));
@@ -80,13 +75,6 @@ module gb_timer (
     logic TIMA_overflow;
     always_ff @(posedge clk) irq_timer <= 1'b0;
     always_ff @(negedge reg_TIMA[7]) if (~(TIMA_write_req | irq_timer | TIMA_write_last)) irq_timer <= 1'b1;
-
-    // Delay the interrupt request by one cycle
-    //assign irq_timer = TIMA_overflow;
-    //always_ff @(posedge clk, posedge reset)
-    //    if (reset | TIMA_write_req | irq_timer) irq_timer <= 1'b0;
-    //    else irq_timer <= TIMA_overflow;
-    //assign irq_timer = (reg_TIMA == 8'hFF && timerTick && ~TIMA_write_req) ? 1'b1 : 1'b0;
 
     // Handle Write Requests to TIMA and TMA
     logic TIMA_write_last;
