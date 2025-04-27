@@ -18,42 +18,44 @@ single source. Regardless, a priority scheme is implemented.
 The data bus can only write to the IR and TEMP registers.
 
 Inputs:
-    clk                     - Machine Clock
-    reset                   - System Reset
+    clk                         - Machine Clock
+    reset                       - System Reset
 
-    alu_req                 - 8 bit Register
-    alu_data                - 8 bit Value
-    alu_flags               - Flags from the ALU
-    alu_wren                - Write Enable for the ALU
+    alu_req                     - 8 bit Register
+    alu_data                    - 8 bit Value
+    alu_flags                   - Flags from the ALU
+    alu_wren                    - Write Enable for the ALU
 
-    idu_req                 - 16 bit Register
-    idu_data                - 16 bit Value
-    idu_wren                - Write Enable for the IDU
+    idu_req                     - 16 bit Register
+    idu_data                    - 16 bit Value
+    idu_wren                    - Write Enable for the IDU
 
-    data_bus_req            - 8 bit Register (IR or TMP)
-    data_bus_data           - 8 bit Value
-    data_bus_wren           - If We Write the Incoming Value on the Data Bus
+    data_bus_req                - 8 bit Register (IR or TMP)
+    data_bus_data               - 8 bit Value
+    data_bus_wren               - If We Write the Incoming Value on the Data Bus
 
-    overwrite_req           - 16 Bit Register to be Overwritten by TEMP Register
-    overwrite_wren          - Write TEMP Register Contents to Another 16-bit Register
+    overwrite_req               - 16 Bit Register to be Overwritten by TEMP Register
+    overwrite_wren              - Write TEMP Register Contents to Another 16-bit Register
 
-    set_adj                 - Set the Adjustment
-    add_adj_pc              - Set PC to Sum of PC and TMP, for Relative Jump
+    set_adj                     - Set the Adjustment
+    add_adj_pc                  - Set PC to Sum of PC and TMP, for Relative Jump
 
-    write_interrupt_vector  - Overwrite PC with Interrupt Vector
-    interrupt_vector        - Highest Priority Interrupt Vector
+    write_interrupt_vector      - Overwrite PC with Interrupt Vector
+    interrupt_vector            - Highest Priority Interrupt Vector
 
-    halt                    - Current Instruction is Halt
-    halt_bug_delay          - Enact the Halt Bug
-    interrupt_queued        - IE & IF is nonzero and Interrupts are Enabled
-    interrupt_queued_no_IME - IE & IF is nonzero but Interrupts are Disabled
+    halt                        - Current Instruction is Halt
+    halt_bug_delay              - Enact the Halt Bug
+    enable_interrupts_delayed   - EI Delay, needed for Halt Bug
+    interrupt_queued            - IE & IF is nonzero and Interrupts are Enabled
+    interrupt_queued_no_IME     - IE & IF is nonzero but Interrupts are Disabled
 
-    last_m_cycle            - Current M-Cycle is Last Cycle for Instruction
+    last_m_cycle                - Current M-Cycle is Last Cycle for Instruction
 
-    restart_cmd             - Clear TMP_HI Register
+    restart_cmd                 - Clear TMP_HI Register
+    restart_opcode              - If Opcode is Restart, needed for Halt Bug
 
 Outputs:
-    registers               - Register File for the CPU, Stored as 8-bit Values
+    registers                   - Register File for the CPU, Stored as 8-bit Values
 */
 /* verilator lint_off MULTIDRIVEN */
 /* verilog_format: off */
@@ -78,10 +80,12 @@ module gb_cpu_regfile (
     input logic [7:0]   interrupt_vector,
     input logic         halt,
     input logic         halt_bug_delay,
+    input logic         enable_interrupts_delayed,
     input logic         interrupt_queued,
     input logic         interrupt_queued_no_IME,
     input logic         last_m_cycle,
     input logic         restart_cmd,
+    input logic         restart_opcode,
     output regfile_t    registers
 );
 
@@ -136,7 +140,9 @@ module gb_cpu_regfile (
         end else begin
 
             // Stall for HALT
-            if ((halt & ~interrupt_queued_no_IME) | halt_bug_delay)
+            if (halt&interrupt_queued&~enable_interrupts_delayed)
+                registers.ir    <= ir_updated;
+            else if ((halt & ~interrupt_queued_no_IME) | (halt&interrupt_queued&enable_interrupts_delayed) | halt_bug_delay)
                 registers.ir    <= registers.ir;
             else
                 registers.ir    <= ir_updated;
@@ -149,17 +155,21 @@ module gb_cpu_regfile (
             registers.e         <= multiSourceWrite(registers.e,     REG_E,    registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
             registers.h         <= multiSourceWrite(registers.h,     REG_H,    registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
             registers.l         <= multiSourceWrite(registers.l,     REG_L,    registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
-            registers.sp_hi     <= multiSourceWrite(registers.sp_hi, REG_SP_H, registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
-            registers.sp_lo     <= multiSourceWrite(registers.sp_lo, REG_SP_L, registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
+            if (restart_opcode&halt_bug_delay) begin
+                registers.sp_hi <= registers.sp_hi;
+                registers.sp_lo <= registers.sp_lo;
+            end else begin
+                registers.sp_hi <= multiSourceWrite(registers.sp_hi, REG_SP_H, registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
+                registers.sp_lo <= multiSourceWrite(registers.sp_lo, REG_SP_L, registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
+            end
 
             // The Program Counter is not incremented during HALT
             // For the HALT bug, add another cycle where PC is static
             if (write_interrupt_vector) begin
                 registers.pc_hi <= 8'd0;
                 registers.pc_lo <= interrupt_vector;
-            end else if (halt & interrupt_queued) begin
-                registers.pc_hi <= multiSourceWrite(registers.pc_hi, REG_PC_H, registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
-                registers.pc_lo <= multiSourceWrite(registers.pc_lo, REG_PC_L, registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
+            end else if ( (halt&interrupt_queued&enable_interrupts_delayed) || (halt_bug_delay&restart_opcode) ) begin
+                {registers.pc_hi, registers.pc_lo} <= {registers.pc_hi, registers.pc_lo} - 16'd1;
             end else if (halt_bug_delay || (halt & ~interrupt_queued_no_IME) || (interrupt_queued & last_m_cycle)) begin
                 registers.pc_hi  <= registers.pc_hi;
                 registers.pc_lo  <= registers.pc_lo;

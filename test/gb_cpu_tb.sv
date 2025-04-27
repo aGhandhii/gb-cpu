@@ -59,9 +59,40 @@ module gb_cpu_tb ();
     always_ff @(posedge irq_timer) memory[16'hFF0F] <= reg_IF | 8'h04;
     /* verilator lint_on MULTIDRIVEN */
 
-    // Help with conditional prints
+    // Help with conditional prints for GameBoy Doctor
     logic cond_fail;
     always_ff @(posedge clk) cond_fail <= dut.curr_controls.cc_check ? dut.cond_not_met : 1'b0;
+
+    // Handle Prints for GameBoy Doctor
+    task automatic printGbDoctor();
+        if (dut.registers.ir != 8'hCB || (dut.registers.ir == 8'hCB && dut.cb_prefix == 1'b1))
+            if (~(dut.isr_cmd & ~dut.interrupt_queued))
+                if ((dut.curr_m_cycle == 3'd0)&&(dut.schedule.m_cycles == 3'd0) || (dut.curr_m_cycle == 3'd1)&&(dut.schedule.m_cycles != 3'd0) || cond_fail) begin
+
+                    logic [15:0] addr, addr1, addr2, addr3;
+
+                    if (dut.curr_controls.idu_destination == REG_PC && dut.curr_controls.idu_operand == REG_PC && dut.curr_controls.idu_opcode == IDU_INC) begin
+                        addr  = {dut.registers.pc_hi, dut.registers.pc_lo};
+                        addr1 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd1;
+                        addr2 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd2;
+                        addr3 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd3;
+                        #2;  // let values resolve
+                    end else begin
+                        #2;  // let values resolve
+                        addr  = {dut.registers.pc_hi, dut.registers.pc_lo} - 16'd1;
+                        addr1 = {dut.registers.pc_hi, dut.registers.pc_lo};
+                        addr2 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd1;
+                        addr3 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd2;
+                    end
+
+                    $display(
+                        "A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%02x%02x PC:%04x PCMEM:%02x,%02x,%02x,%02x",
+                        dut.registers.a, dut.registers.f, dut.registers.b, dut.registers.c, dut.registers.d,
+                        dut.registers.e, dut.registers.h, dut.registers.l, dut.registers.sp_hi, dut.registers.sp_lo,
+                        (cond_fail | dut.interrupt_queued) ? {dut.registers.pc_hi, dut.registers.pc_lo} : ({dut.registers.pc_hi, dut.registers.pc_lo} - 16'd1),
+                        memory[addr], memory[addr1], memory[addr2], memory[addr3]);
+                end
+    endtask : printGbDoctor
 
     // Toggle the Clock
     initial begin
@@ -79,23 +110,41 @@ module gb_cpu_tb ();
 
         //$readmemh("./test/roms/blargg/cpu_instrs/02-interrupts.gb", memory, 0, 32768);
         //$readmemh("./test/roms/blargg/cpu_instrs/03-op-sp-hl.gb", memory, 0, 32768);
-        $readmemh("./test/roms/blargg/instr_timing.gb", memory, 0, 32768);
+        $readmemh("./test/roms/blargg/halt_bug.gb", memory, 0, 32768);
+        //$readmemh("./test/roms/blargg/instr_timing.gb", memory, 0, 32768);
         //$readmemh("./test/roms/mooneye/timer/tim11_div_trigger.gb", memory, 0, 32768);
 
+        //memory[16'h0000] = 8'h3C; // inc A
+        //memory[16'h0001] = 8'hC9; // ret
         //memory[16'h0050] = 8'hD9; // reti
-        //memory[16'h0100] = 8'h3E; // load imm8 to A
+
+        //// Enable Timer Interrupts
+        //memory[16'h0100] = 8'h3E; // load 0x04 to A
         //memory[16'h0101] = 8'h04;
         //memory[16'h0102] = 8'hE0; // ldh IE A
         //memory[16'h0103] = 8'hFF;
-        //memory[16'h0104] = 8'hE0; // ldh IF A
-        //memory[16'h0105] = 8'h0F;
-        //memory[16'h0106] = 8'hFB; // EI
-        //memory[16'h0107] = 8'hCB; // 0xCB prefix
-        //memory[16'h0108] = 8'h06;
-        //memory[16'h0109] = 8'h76; // halt
-
-        // CURR FAILS
-        // C7:8-4 CB 06:57-4 CB 0E:88-4 CB 16:236-4 CB 1E:183-4 CB 26:236-4 CB 2E:88-4
+        //memory[16'h0104] = 8'h00; // NoOp
+        //// Enable the Timer
+        //memory[16'h0105] = 8'h3E; // load 0x05 to A
+        //memory[16'h0106] = 8'h05;
+        //memory[16'h0107] = 8'hE0; // ldh TAC A
+        //memory[16'h0108] = 8'h07;
+        //memory[16'h0109] = 8'h3E; // load 0xFE to A
+        //memory[16'h010A] = 8'hFE;
+        //memory[16'h010B] = 8'hE0; // ldh TMA A
+        //memory[16'h010C] = 8'h06;
+        //memory[16'h010D] = 8'hE0; // ldh TIMA A
+        //memory[16'h010E] = 8'h05;
+        //memory[16'h010F] = 8'hE0; // ldh DIV A
+        //memory[16'h0110] = 8'h04;
+        //memory[16'h0111] = 8'h00; // NoOp
+        //memory[16'h0112] = 8'h00; // NoOp
+        //memory[16'h0113] = 8'h00; // NoOp
+        ////memory[16'h0114] = 8'hFB; // ei
+        //memory[16'h0114] = 8'h76; // halt
+        ////memory[16'h0115] = 8'h3C; // inc A
+        //memory[16'h0115] = 8'hC7; // rst 0x0000
+        //memory[16'h0116] = 8'h00; // NoOp
 
         $dumpfile("gb_cpu_tb.fst");
         $dumpvars();
@@ -109,36 +158,7 @@ module gb_cpu_tb ();
             //repeat (99) begin
             #1;
             @(posedge clk);
-
-            // Print output for GameBoy Doctor
-            //if (dut.registers.ir != 8'hCB || (dut.registers.ir == 8'hCB && dut.cb_prefix == 1'b1))
-            //    if (~(dut.isr_cmd & ~dut.interrupt_queued))
-            //        if ((dut.curr_m_cycle == 3'd0)&&(dut.schedule.m_cycles == 3'd0) || (dut.curr_m_cycle == 3'd1)&&(dut.schedule.m_cycles != 3'd0) || cond_fail) begin
-
-            //            logic [15:0] addr, addr1, addr2, addr3;
-
-            //            if (dut.curr_controls.idu_destination == REG_PC && dut.curr_controls.idu_operand == REG_PC && dut.curr_controls.idu_opcode == IDU_INC) begin
-            //                addr  = {dut.registers.pc_hi, dut.registers.pc_lo};
-            //                addr1 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd1;
-            //                addr2 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd2;
-            //                addr3 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd3;
-            //                #2;  // let values resolve
-            //            end else begin
-            //                #2;  // let values resolve
-            //                addr  = {dut.registers.pc_hi, dut.registers.pc_lo} - 16'd1;
-            //                addr1 = {dut.registers.pc_hi, dut.registers.pc_lo};
-            //                addr2 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd1;
-            //                addr3 = {dut.registers.pc_hi, dut.registers.pc_lo} + 16'd2;
-            //            end
-
-            //            $display(
-            //                "A:%02x F:%02x B:%02x C:%02x D:%02x E:%02x H:%02x L:%02x SP:%02x%02x PC:%04x PCMEM:%02x,%02x,%02x,%02x",
-            //                dut.registers.a, dut.registers.f, dut.registers.b, dut.registers.c, dut.registers.d,
-            //                dut.registers.e, dut.registers.h, dut.registers.l, dut.registers.sp_hi, dut.registers.sp_lo,
-            //                (cond_fail | dut.interrupt_queued) ? {dut.registers.pc_hi, dut.registers.pc_lo} : ({dut.registers.pc_hi, dut.registers.pc_lo} - 16'd1),
-            //                memory[addr], memory[addr1], memory[addr2], memory[addr3]);
-            //        end
-
+            //printGbDoctor();
         end
 
         $finish();

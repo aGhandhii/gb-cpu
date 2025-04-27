@@ -93,7 +93,7 @@ module gb_cpu_scheduler (
         end else if (curr_m_cycle == 3'd0 | last_m_cycle) begin
             // Load the next cycle count
             if (interrupt_queued & last_m_cycle & ~schedule.cb_prefix_next)
-                next_m_cycle <= (curr_m_cycle == 3'd0) ? 3'd4 : 3'd0;
+                next_m_cycle <= (curr_m_cycle == 3'd0) ? 3'd5 : 3'd0;
             else if (curr_m_cycle != 3'd0) next_m_cycle <= 3'd0;
             else next_m_cycle <= cond_not_met_last ? 3'd0 : schedule.m_cycles;
             // Load in the next instruction
