@@ -145,13 +145,7 @@ module gb_cpu (
     assign clear_interrupt_flag = curr_controls.clear_interrupt_flag;
 
     // Additional handling for HALT and the HALT bug
-    logic halt, halt_bug_delay, restart_opcode;
-    always_comb begin : isRestartCommand
-        case (registers.ir) inside
-            8'hC7, 8'hD7, 8'hE7, 8'hF7, 8'hCF, 8'hDF, 8'hEF, 8'hFF: restart_opcode = 1'b1;
-            default: restart_opcode = 1'b0;
-        endcase
-    end
+    logic halt, halt_bug_delay;
     assign halt = (registers.ir == 8'h76 && ~isr_cmd && ~cb_prefix) ? 1'b1 : 1'b0;
     always_ff @(posedge clk)
         if (halt & interrupt_queued_no_IME) halt_bug_delay <= 1'b1;
@@ -231,7 +225,6 @@ module gb_cpu (
         .interrupt_queued_no_IME(interrupt_queued_no_IME),
         .last_m_cycle(last_m_cycle),
         .restart_cmd(curr_controls.rst_cmd),
-        .restart_opcode(restart_opcode),
         .registers(registers)
     );
 

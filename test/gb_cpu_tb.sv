@@ -100,7 +100,6 @@ module gb_cpu_tb ();
         forever #10 clk = ~clk;
     end
 
-
     // Main Test
     initial begin
 
@@ -110,41 +109,48 @@ module gb_cpu_tb ();
 
         //$readmemh("./test/roms/blargg/cpu_instrs/02-interrupts.gb", memory, 0, 32768);
         //$readmemh("./test/roms/blargg/cpu_instrs/03-op-sp-hl.gb", memory, 0, 32768);
-        $readmemh("./test/roms/blargg/halt_bug.gb", memory, 0, 32768);
+        //$readmemh("./test/roms/blargg/halt_bug.gb", memory, 0, 32768);
         //$readmemh("./test/roms/blargg/instr_timing.gb", memory, 0, 32768);
+        $readmemh("./test/roms/blargg/mem_timing/01-read_timing.gb", memory, 0, 32768);
         //$readmemh("./test/roms/mooneye/timer/tim11_div_trigger.gb", memory, 0, 32768);
 
-        //memory[16'h0000] = 8'h3C; // inc A
-        //memory[16'h0001] = 8'hC9; // ret
-        //memory[16'h0050] = 8'hD9; // reti
+        memory[16'h0000] = 8'h3C;  // inc A
+        memory[16'h0001] = 8'hC9;  // ret
+        memory[16'h0050] = 8'hD9;  // reti
+        //memory[16'h0050] = 8'hC9; // ret
 
-        //// Enable Timer Interrupts
-        //memory[16'h0100] = 8'h3E; // load 0x04 to A
-        //memory[16'h0101] = 8'h04;
-        //memory[16'h0102] = 8'hE0; // ldh IE A
-        //memory[16'h0103] = 8'hFF;
-        //memory[16'h0104] = 8'h00; // NoOp
-        //// Enable the Timer
-        //memory[16'h0105] = 8'h3E; // load 0x05 to A
-        //memory[16'h0106] = 8'h05;
-        //memory[16'h0107] = 8'hE0; // ldh TAC A
-        //memory[16'h0108] = 8'h07;
-        //memory[16'h0109] = 8'h3E; // load 0xFE to A
-        //memory[16'h010A] = 8'hFE;
-        //memory[16'h010B] = 8'hE0; // ldh TMA A
-        //memory[16'h010C] = 8'h06;
-        //memory[16'h010D] = 8'hE0; // ldh TIMA A
-        //memory[16'h010E] = 8'h05;
-        //memory[16'h010F] = 8'hE0; // ldh DIV A
-        //memory[16'h0110] = 8'h04;
-        //memory[16'h0111] = 8'h00; // NoOp
-        //memory[16'h0112] = 8'h00; // NoOp
-        //memory[16'h0113] = 8'h00; // NoOp
-        ////memory[16'h0114] = 8'hFB; // ei
-        //memory[16'h0114] = 8'h76; // halt
-        ////memory[16'h0115] = 8'h3C; // inc A
-        //memory[16'h0115] = 8'hC7; // rst 0x0000
-        //memory[16'h0116] = 8'h00; // NoOp
+        //        // Enable Timer Interrupts
+        //        memory[16'h0100] = 8'h3E; // load 0x04 to A
+        //        memory[16'h0101] = 8'h04;
+        //        memory[16'h0102] = 8'hE0; // ldh IE A
+        //        memory[16'h0103] = 8'hFF;
+        //        memory[16'h0104] = 8'h00; // NoOp
+        //        // Enable the Timer
+        //        memory[16'h0105] = 8'h3E; // load 0x05 to A
+        //        memory[16'h0106] = 8'h05;
+        //        memory[16'h0107] = 8'hE0; // ldh TAC A
+        //        memory[16'h0108] = 8'h07;
+        //        memory[16'h0109] = 8'h3E; // load 0xFE to A
+        //        memory[16'h010A] = 8'hFE;
+        //        memory[16'h010B] = 8'hE0; // ldh TMA A
+        //        memory[16'h010C] = 8'h06;
+        //        memory[16'h010D] = 8'hE0; // ldh TIMA A
+        //        memory[16'h010E] = 8'h05;
+        //        memory[16'h010F] = 8'hE0; // ldh DIV A
+        //        memory[16'h0110] = 8'h04;
+        //        memory[16'h0111] = 8'h00; // NoOp
+        //        memory[16'h0112] = 8'h00; // NoOp
+        //        //memory[16'h0113] = 8'h00; // NoOp
+        //        memory[16'h0113] = 8'hFB; // ei
+        //        memory[16'h0114] = 8'h76; // halt
+        //        //memory[16'h0115] = 8'h06;
+        //        //memory[16'h0116] = 8'h04;
+        //        //memory[16'h0117] = 8'h00;
+        //        //memory[16'h0115] = 8'h3C; // inc A
+        //        memory[16'h0115] = 8'hC7; // rst 0x0000
+        //        //memory[16'h0115] = 8'h76; // halt
+        //        memory[16'h0116] = 8'h00; // NoOp
+        //        memory[16'h0117] = 8'h00; // NoOp
 
         $dumpfile("gb_cpu_tb.fst");
         $dumpvars();
@@ -154,8 +160,8 @@ module gb_cpu_tb ();
         #1;
         reset = 1'b0;
 
+        //repeat (99) begin
         repeat (9999999) begin
-            //repeat (99) begin
             #1;
             @(posedge clk);
             //printGbDoctor();

@@ -52,7 +52,6 @@ Inputs:
     last_m_cycle                - Current M-Cycle is Last Cycle for Instruction
 
     restart_cmd                 - Clear TMP_HI Register
-    restart_opcode              - If Opcode is Restart, needed for Halt Bug
 
 Outputs:
     registers                   - Register File for the CPU, Stored as 8-bit Values
@@ -85,7 +84,6 @@ module gb_cpu_regfile (
     input logic         interrupt_queued_no_IME,
     input logic         last_m_cycle,
     input logic         restart_cmd,
-    input logic         restart_opcode,
     output regfile_t    registers
 );
 
@@ -155,22 +153,16 @@ module gb_cpu_regfile (
             registers.e         <= multiSourceWrite(registers.e,     REG_E,    registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
             registers.h         <= multiSourceWrite(registers.h,     REG_H,    registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
             registers.l         <= multiSourceWrite(registers.l,     REG_L,    registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
-            if (restart_opcode&halt_bug_delay) begin
-                registers.sp_hi <= registers.sp_hi;
-                registers.sp_lo <= registers.sp_lo;
-            end else begin
-                registers.sp_hi <= multiSourceWrite(registers.sp_hi, REG_SP_H, registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
-                registers.sp_lo <= multiSourceWrite(registers.sp_lo, REG_SP_L, registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
-            end
+            registers.sp_hi     <= multiSourceWrite(registers.sp_hi, REG_SP_H, registers.tmp_hi, overwrite_req_hi, overwrite_wren, idu_data_hi, idu_req_hi, idu_wren);
+            registers.sp_lo     <= multiSourceWrite(registers.sp_lo, REG_SP_L, registers.tmp_lo, overwrite_req_lo, overwrite_wren, idu_data_lo, idu_req_lo, idu_wren);
 
-            // The Program Counter is not incremented during HALT
-            // For the HALT bug, add another cycle where PC is static
+            // The Program Counter is not incremented correctly during HALT
             if (write_interrupt_vector) begin
                 registers.pc_hi <= 8'd0;
                 registers.pc_lo <= interrupt_vector;
-            end else if ( (halt&interrupt_queued&enable_interrupts_delayed) || (halt_bug_delay&restart_opcode) ) begin
+            end else if ( (halt&interrupt_queued&enable_interrupts_delayed) ) begin
                 {registers.pc_hi, registers.pc_lo} <= {registers.pc_hi, registers.pc_lo} - 16'd1;
-            end else if (halt_bug_delay || (halt & ~interrupt_queued_no_IME) || (interrupt_queued & last_m_cycle)) begin
+            end else if ((halt & interrupt_queued_no_IME) || (interrupt_queued & last_m_cycle)) begin
                 registers.pc_hi  <= registers.pc_hi;
                 registers.pc_lo  <= registers.pc_lo;
             end else begin

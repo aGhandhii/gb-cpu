@@ -8,6 +8,11 @@ This project aims to build a GameBoy CPU with the following functionality:
  - [x] Implement the Timer Circuit
  - [x] Service Timing Interups
  - [ ] Handle the Halt Bug
+    - [x] ei before halt, (IE&IF != 0, IME = 0), call ISR but return to halt
+    - [x] rst after halt bug (IE&IF != 0, IME = 0), push address of rst to stack, not rst+1
+    - [x] halt, (IE&IF != 0, IME = 0), read next opcode twice
+    - [x] halt, (IE&IF != 0, IME = 1), call ISR and continue normally
+    - [x] ei before halt, (IE&IF != 0, IME = 0), rst after halt. Call ISR, return to halt, rst works normally
 
 The following components are not in the scope of this repository:
 
