@@ -100,12 +100,14 @@ module gb_cpu_scheduler (
             load_from_schedule <= 1'b1;
             cond_not_met_last  <= 1'b0;
             cb_prefix_last     <= schedule.cb_prefix_next;
-            // Check for 0xCB prefixing
-            if (schedule.cb_prefix_next || ((cb_prefix_o == 1'b1) && (schedule.m_cycles > 3'd0))) cb_prefix_o <= 1'b1;
-            else cb_prefix_o <= 1'b0;
-            // Check for ISR request
-            if (schedule.cb_prefix_next) isr_cmd <= 1'b0;
-            else isr_cmd <= last_m_cycle ? interrupt_queued : isr_cmd;
+            // Check for 0xCB prefixing and handle ISR requests
+            if (schedule.cb_prefix_next) begin
+                cb_prefix_o <= 1'b1;
+                isr_cmd <= 1'b0;
+            end else begin
+                cb_prefix_o <= last_m_cycle ? 1'b0 : cb_prefix_o;
+                isr_cmd <= last_m_cycle ? interrupt_queued : isr_cmd;
+            end
         end else begin
             // Decrement the cycle count for the instruction
             next_m_cycle       <= curr_m_cycle - 3'd1;

@@ -63,23 +63,39 @@ module gb_cpu_tb ();
     logic cond_fail;
     always_ff @(posedge clk) cond_fail <= dut.curr_controls.cc_check ? dut.cond_not_met : 1'b0;
 
+    // Toggle the Clock
     initial begin
         clk = 1'b0;
         forever #10 clk = ~clk;
     end
 
+
+    // Main Test
     initial begin
 
         for (int i = 0; i < 65536; i++) memory[i] = 8'h00;
 
         memory[16'hFF44] = 8'h90;
 
-        //$readmemh("./test/roms/01-special.gb", memory, 0, 32768);
-        //$readmemh("./test/roms/02-interrupts.gb", memory, 0, 32768);
-        //$readmemh("./test/roms/03-op-sp-hl.gb", memory, 0, 32768);
-        //$readmemh("./test/roms/04-op-r-imm.gb", memory, 0, 32768);
+        //$readmemh("./test/roms/blargg/cpu_instrs/02-interrupts.gb", memory, 0, 32768);
+        //$readmemh("./test/roms/blargg/cpu_instrs/03-op-sp-hl.gb", memory, 0, 32768);
+        $readmemh("./test/roms/blargg/instr_timing.gb", memory, 0, 32768);
+        //$readmemh("./test/roms/mooneye/timer/tim11_div_trigger.gb", memory, 0, 32768);
 
-        $readmemh("./test/roms/instr_timing.gb", memory, 0, 32768);
+        //memory[16'h0050] = 8'hD9; // reti
+        //memory[16'h0100] = 8'h3E; // load imm8 to A
+        //memory[16'h0101] = 8'h04;
+        //memory[16'h0102] = 8'hE0; // ldh IE A
+        //memory[16'h0103] = 8'hFF;
+        //memory[16'h0104] = 8'hE0; // ldh IF A
+        //memory[16'h0105] = 8'h0F;
+        //memory[16'h0106] = 8'hFB; // EI
+        //memory[16'h0107] = 8'hCB; // 0xCB prefix
+        //memory[16'h0108] = 8'h06;
+        //memory[16'h0109] = 8'h76; // halt
+
+        // CURR FAILS
+        // C7:8-4 CB 06:57-4 CB 0E:88-4 CB 16:236-4 CB 1E:183-4 CB 26:236-4 CB 2E:88-4
 
         $dumpfile("gb_cpu_tb.fst");
         $dumpvars();
@@ -90,6 +106,7 @@ module gb_cpu_tb ();
         reset = 1'b0;
 
         repeat (9999999) begin
+            //repeat (99) begin
             #1;
             @(posedge clk);
 

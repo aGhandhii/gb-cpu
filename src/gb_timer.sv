@@ -48,14 +48,17 @@ module gb_timer (
 
     // 6 bits longer than reg_DIV; increment reg_DIV at 16384Hz
     logic [13:0] systemCounter;
+    logic DIV_write_req;
+    assign DIV_write_req = (wren && (addr == 16'hFF04));
 
     // reg_DIV is the upper bits of the system counter
     assign reg_DIV = systemCounter[13:6];
 
     // Any write attempt to DIV will reset the system counter
     always_ff @(posedge clk, posedge reset)
-        if (reset || (wren && (addr == 16'hFF04))) systemCounter <= 14'd0;
+        if (reset) systemCounter <= 14'd0;
         else systemCounter <= systemCounter + 14'd1;
+    always_ff @(posedge DIV_write_req) systemCounter <= 14'd0;
 
     // Logic between DIV and Timer
     logic [3:0] divFrequencySelect;
@@ -64,9 +67,9 @@ module gb_timer (
     assign timerTickReq = divFrequencySelect[TAC_frequency] & TAC_enable;
 
     // On the falling edge of a timer tick request, attempt to increment TIMA
-    logic timerTick;
-    always_ff @(posedge clk) timerTick <= 1'b0;
-    always_ff @(negedge timerTickReq) timerTick <= 1'b1;
+    //logic timerTick;
+    //always_ff @(posedge clk) timerTick <= 1'b0;
+    //always_ff @(negedge timerTickReq) timerTick <= 1'b1;
 
     // Logic between Timer and Interrupt Request
     logic TIMA_write_req, TMA_write_req;
@@ -75,29 +78,39 @@ module gb_timer (
 
     // If TIMA overflows, attempt an interrupt request
     logic TIMA_overflow;
-    always_ff @(posedge clk) TIMA_overflow <= 1'b0;
-    always_ff @(negedge reg_TIMA[7]) if (~(TIMA_write_req | irq_timer)) TIMA_overflow <= 1'b1;
+    always_ff @(posedge clk) irq_timer <= 1'b0;
+    always_ff @(negedge reg_TIMA[7]) if (~(TIMA_write_req | irq_timer | TIMA_write_last)) irq_timer <= 1'b1;
 
     // Delay the interrupt request by one cycle
-    always_ff @(posedge clk, posedge reset)
-        if (reset | TIMA_write_req | irq_timer) irq_timer <= 1'b0;
-        else irq_timer <= TIMA_overflow;
+    //assign irq_timer = TIMA_overflow;
+    //always_ff @(posedge clk, posedge reset)
+    //    if (reset | TIMA_write_req | irq_timer) irq_timer <= 1'b0;
+    //    else irq_timer <= TIMA_overflow;
+    //assign irq_timer = (reg_TIMA == 8'hFF && timerTick && ~TIMA_write_req) ? 1'b1 : 1'b0;
 
     // Handle Write Requests to TIMA and TMA
-    always_ff @(posedge clk, posedge reset)
+    logic TIMA_write_last;
+
+    always_ff @(posedge clk, posedge reset) begin
+        TIMA_write_last <= 1'b0;
+        TIMA_overflow   <= irq_timer;
         if (reset) begin
             reg_TIMA <= 8'h00;
             reg_TMA  <= 8'h00;
-        end else begin
-            if (TMA_write_req) reg_TMA <= data_i;
-            else reg_TMA <= reg_TMA;
+        end else if (TMA_write_req) reg_TMA <= data_i;
+        else reg_TMA <= reg_TMA;
+    end
 
-            if (TIMA_write_req | TIMA_overflow)
-                if (TMA_write_req | (TIMA_write_req & ~TIMA_overflow)) reg_TIMA <= data_i;
-                else reg_TIMA <= reg_TMA;
-            else if (timerTick) reg_TIMA <= reg_TIMA + 8'h01;
-            else reg_TIMA <= reg_TIMA;
+    always_ff @(posedge TIMA_write_req, TIMA_overflow)
+        if (TMA_write_req | (TIMA_write_req & ~TIMA_overflow)) begin
+            reg_TIMA <= data_i;
+            TIMA_write_last <= 1'b1;
+        end else begin
+            reg_TIMA <= reg_TMA;
+            TIMA_write_last <= 1'b0;
         end
+
+    always_ff @(negedge timerTickReq) reg_TIMA <= reg_TIMA + 8'h01;
 
     // Handle Register Reads
     always_comb begin : timerRegisterReads

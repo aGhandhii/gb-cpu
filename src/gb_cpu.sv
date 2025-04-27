@@ -146,7 +146,7 @@ module gb_cpu (
 
     // Additional handling for HALT and the HALT bug
     logic halt, halt_bug_delay;
-    assign halt = (registers.ir == 8'h76) ? 1'b1 : 1'b0;
+    assign halt = (registers.ir == 8'h76 && ~isr_cmd && ~cb_prefix) ? 1'b1 : 1'b0;
     always_ff @(posedge clk)
         if (halt & interrupt_queued_no_IME) halt_bug_delay <= 1'b1;
         else halt_bug_delay <= 1'b0;

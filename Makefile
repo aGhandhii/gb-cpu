@@ -1,5 +1,5 @@
 # Conditional Compilation Rules
-WAVES			=
+WAVES           =
 ICARUS          =
 VERILATOR       = 1
 
@@ -8,7 +8,7 @@ PROJ            = Project
 BUILD_DIR       = ./build
 SIM_DIR         = ./sim
 SV2V_DIR        = ./sv2v
-VERILATOR_DIR	= ./obj_dir
+VERILATOR_DIR   = ./obj_dir
 TEST_BIN        = $(SIM_DIR)/$(TOP).vvp
 TEST_WAVE       = $(SIM_DIR)/$(TOP).fst
 TEST_LOG        = $(SIM_DIR)/$(TOP).log
