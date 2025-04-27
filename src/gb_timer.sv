@@ -5,10 +5,6 @@ This currently implements the timer for the DMG model, not the CGB model
 TODO: Color - KEY1 register controls Double-Speed mode
 TODO: Suspend system counter in STOP mode
 
-The overflow on TIMA takes 2 cycles while in actual hardware this only takes
-a single cycle - as the physical register is a toggle flip flop, not clocked
-    - do I need to implement this behavior?
-
 Inputs:
     clk                     - Machine (M) Clock
     reset                   - System Reset
