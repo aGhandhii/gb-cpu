@@ -94,6 +94,14 @@ package gb_cpu_decoder_pkg;
 
     // INTERRUPT SERVICE ROUTINE (ISR) {{{
 
+
+    // Unlike other command schedulers, we offset the ISR's schedule indexes
+    // by one (this is a 5-cycle instruction, usually this would be places in
+    // schedule indexes 0-4, but the ISR places them in 1-5 and declares 6
+    // m-cycles, leaving instruction 0 undefined).
+    // We do this to work with the current scheduler system, which accounts for
+    // the fetch-execute cycle: because the ISR does not have a corresponding
+    // opcode, we need this workaround to ensure all cycles are executed.
     function automatic schedule_t interruptServiceRoutine();
 
         schedule_t schedule, blankSchedule;

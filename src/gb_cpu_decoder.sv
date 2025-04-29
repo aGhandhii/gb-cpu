@@ -3,9 +3,6 @@ import gb_cpu_common_pkg::*;
 
 Reads in CISC Instructions and sets control signals accordingly
 
-Based on the Pan Docs 'CPU Instruction Set' page
-https://gbdev.io/pandocs/CPU_Instruction_Set.html
-
 Inputs:
     opcode      - 8-bit instruction from IR
     cb_prefix   - If instruction is 0xCB prefixed

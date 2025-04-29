@@ -138,9 +138,9 @@ module gb_cpu_regfile (
         end else begin
 
             // Stall for HALT
-            if (halt&interrupt_queued&~enable_interrupts_delayed)
+            if (halt & interrupt_queued & ~enable_interrupts_delayed)
                 registers.ir    <= ir_updated;
-            else if ((halt & ~interrupt_queued_no_IME) | (halt&interrupt_queued&enable_interrupts_delayed) | halt_bug_delay)
+            else if ((halt & ~interrupt_queued_no_IME) | (halt & interrupt_queued & enable_interrupts_delayed) | halt_bug_delay)
                 registers.ir    <= registers.ir;
             else
                 registers.ir    <= ir_updated;
@@ -160,9 +160,9 @@ module gb_cpu_regfile (
             if (write_interrupt_vector) begin
                 registers.pc_hi <= 8'd0;
                 registers.pc_lo <= interrupt_vector;
-            end else if ( (halt&interrupt_queued&enable_interrupts_delayed) ) begin
+            end else if (halt & interrupt_queued & enable_interrupts_delayed) begin
                 {registers.pc_hi, registers.pc_lo} <= {registers.pc_hi, registers.pc_lo} - 16'd1;
-            end else if ((halt & interrupt_queued_no_IME) || (interrupt_queued & last_m_cycle)) begin
+            end else if ((halt & interrupt_queued_no_IME) || (interrupt_queued & last_m_cycle) || (halt & ~interrupt_queued)) begin
                 registers.pc_hi  <= registers.pc_hi;
                 registers.pc_lo  <= registers.pc_lo;
             end else begin

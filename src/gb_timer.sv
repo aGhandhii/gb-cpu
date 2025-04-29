@@ -2,9 +2,6 @@
 
 This currently implements the timer for the DMG model, not the CGB model
 
-TODO: Color - KEY1 register controls Double-Speed mode
-TODO: Suspend system counter in STOP mode
-
 Inputs:
     clk                     - Machine (M) Clock
     reset                   - System Reset
@@ -15,7 +12,6 @@ Inputs:
 Outputs:
     data_o                  - Value of Requested Register
     irq_timer               - Timer Interrupt Request
-
 */
 /* verilator lint_off MULTIDRIVEN */
 module gb_timer (
@@ -74,7 +70,6 @@ module gb_timer (
 
     // Handle Write Requests to TIMA and TMA
     logic TIMA_write_last;
-
     always_ff @(posedge clk, posedge reset) begin
         TIMA_write_last <= 1'b0;
         TIMA_overflow   <= irq_timer;
@@ -84,7 +79,6 @@ module gb_timer (
         end else if (TMA_write_req) reg_TMA <= data_i;
         else reg_TMA <= reg_TMA;
     end
-
     always_ff @(posedge TIMA_write_req, TIMA_overflow)
         if (TMA_write_req | (TIMA_write_req & ~TIMA_overflow)) begin
             reg_TIMA <= data_i;
@@ -93,7 +87,6 @@ module gb_timer (
             reg_TIMA <= reg_TMA;
             TIMA_write_last <= 1'b0;
         end
-
     always_ff @(negedge timerTickReq) reg_TIMA <= reg_TIMA + 8'h01;
 
     // Handle Register Reads
