@@ -7,7 +7,7 @@ This project aims to build a GameBoy CPU with the following functionality:
  - [x] Execute GameBoy opcodes with complete Cycle-Accuracy
  - [x] Implement the Timer Circuit
  - [x] Service Timing Interups
- - [ ] Handle the Halt Bug
+ - [x] Handle the Halt Bug (should work, can't confirm until PPU is added)
     - [x] ei before halt, (IE&IF != 0, IME = 0), call ISR but return to halt
     - [x] rst after halt bug (IE&IF != 0, IME = 0), push address of rst to stack, not rst+1
     - [x] halt, (IE&IF != 0, IME = 0), read next opcode twice
@@ -31,7 +31,7 @@ The following components are not in the scope of this repository:
 cpu_instrs   | ✅
 instr_timing | ✅
 mem_timing   | ✅
-halt_bug     | ❌
+halt_bug     | ❌ (requires Vblank interrupt, can't test in this scope)
 
 
 ## Resources
